@@ -67,7 +67,7 @@ static void slider_brightness_event_cb(lv_event_t *e) {
 
     if (lblBrightVal) {
         int pct = (val * 100) / 255;
-        lv_label_set_text_fmt(lblBrightVal, "Brillo AMOLED: %d%% (%ld/255)", pct, (long)val);
+        lv_label_set_text_fmt(lblBrightVal, "Brillo de pantalla: %d%%", pct);
     }
     scr_watchface_update_power(cachedPower, (uint8_t)val);
 }
@@ -101,6 +101,7 @@ static void build_ui() {
     lv_obj_t *tv = lv_tileview_create(scr);
     lv_obj_set_size(tv, WATCH_LCD_WIDTH, WATCH_LCD_HEIGHT);
     lv_obj_set_style_bg_color(tv, lv_color_hex(0x000000), 0);
+    lv_obj_set_scrollbar_mode(tv, LV_SCROLLBAR_MODE_OFF);
 
     lv_obj_t *tileWatchface = lv_tileview_add_tile(tv, 0, 0, LV_DIR_RIGHT);
     lv_obj_t *tileSettings  = lv_tileview_add_tile(tv, 1, 0, LV_DIR_LEFT);
@@ -108,107 +109,110 @@ static void build_ui() {
     // 1. Construir la Watchface Principal en la Pantalla 1
     scr_watchface_build(tileWatchface);
 
-    // 2. Construir el Centro de Control Rápido en la Pantalla 2
+    // 2. Construir el Panel de Ajustes en la Pantalla 2 (estética neutra y sobria)
     lv_obj_set_style_pad_all(tileSettings, 0, 0);
+    lv_obj_set_style_bg_color(tileSettings, lv_color_hex(0x000000), 0);
 
     lv_obj_t *title2 = lv_label_create(tileSettings);
-    lv_obj_set_style_text_font(title2, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(title2, lv_color_hex(0x00E5FF), 0);
-    lv_label_set_text(title2, "CENTRO DE CONTROL");
-    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 16);
+    lv_obj_set_style_text_font(title2, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(title2, lv_color_hex(0xA1A1AA), 0);
+    lv_obj_set_style_text_letter_space(title2, 4, 0);
+    lv_label_set_text(title2, "AJUSTES");
+    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 22);
 
-    // --- Tarjeta A: Brillo AMOLED (Y = 52..168, alto = 116 px) ---
+    // --- Bloque A: Brillo AMOLED (Y = 60..176, alto = 116 px) ---
     lv_obj_t *cardBright = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardBright, 370, 116);
-    lv_obj_align(cardBright, LV_ALIGN_TOP_MID, 0, 52);
-    lv_obj_set_style_pad_all(cardBright, 0, 0); // Cero padding automático del tema
-    lv_obj_set_style_bg_color(cardBright, lv_color_hex(0x121820), 0);
-    lv_obj_set_style_border_color(cardBright, lv_color_hex(0x1E293B), 0);
-    lv_obj_set_style_radius(cardBright, 18, 0);
+    lv_obj_set_size(cardBright, 366, 116);
+    lv_obj_align(cardBright, LV_ALIGN_TOP_MID, 0, 60);
+    lv_obj_set_style_pad_all(cardBright, 0, 0);
+    lv_obj_set_style_bg_color(cardBright, lv_color_hex(0x0C0C0E), 0);
+    lv_obj_set_style_border_color(cardBright, lv_color_hex(0x27272A), 0);
+    lv_obj_set_style_border_width(cardBright, 1, 0);
+    lv_obj_set_style_radius(cardBright, 14, 0);
     lv_obj_clear_flag(cardBright, LV_OBJ_FLAG_SCROLLABLE);
 
     lblBrightVal = lv_label_create(cardBright);
-    lv_obj_set_style_text_font(lblBrightVal, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(lblBrightVal, lv_color_hex(0xFFD54F), 0);
-    lv_label_set_text(lblBrightVal, "Brillo AMOLED: 86% (220/255)");
-    lv_obj_align(lblBrightVal, LV_ALIGN_TOP_LEFT, 20, 16);
+    lv_obj_set_style_text_font(lblBrightVal, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(lblBrightVal, lv_color_hex(0xD4D4D8), 0);
+    lv_label_set_text(lblBrightVal, "Brillo de pantalla: 86%");
+    lv_obj_align(lblBrightVal, LV_ALIGN_TOP_LEFT, 22, 18);
 
     sliderBright = lv_slider_create(cardBright);
-    lv_obj_set_size(sliderBright, 316, 22);
-    lv_obj_align(sliderBright, LV_ALIGN_TOP_MID, 0, 64);
+    lv_obj_set_size(sliderBright, 314, 16);
+    lv_obj_align(sliderBright, LV_ALIGN_TOP_MID, 0, 66);
     lv_slider_set_range(sliderBright, 15, 255);
     lv_slider_set_value(sliderBright, hal_display_get_brightness(), LV_ANIM_OFF);
-    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0x00E5FF), LV_PART_INDICATOR);
-    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0xFFFFFF), LV_PART_KNOB);
+    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0x27272A), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0xD4D4D8), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0xF4F4F5), LV_PART_KNOB);
     lv_obj_add_event_cb(sliderBright, slider_brightness_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
 
-    // --- Tarjeta B: Ajuste Rápido de Hora en el Chip RTC (Y = 180..308, alto = 128 px) ---
+    // --- Bloque B: Ajuste de Hora (Y = 192..320, alto = 128 px) ---
     lv_obj_t *cardRtc = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardRtc, 370, 128);
-    lv_obj_align(cardRtc, LV_ALIGN_TOP_MID, 0, 180);
-    lv_obj_set_style_pad_all(cardRtc, 0, 0); // Cero padding automático del tema
-    lv_obj_set_style_bg_color(cardRtc, lv_color_hex(0x121820), 0);
-    lv_obj_set_style_border_color(cardRtc, lv_color_hex(0x1E293B), 0);
-    lv_obj_set_style_radius(cardRtc, 18, 0);
+    lv_obj_set_size(cardRtc, 366, 128);
+    lv_obj_align(cardRtc, LV_ALIGN_TOP_MID, 0, 192);
+    lv_obj_set_style_pad_all(cardRtc, 0, 0);
+    lv_obj_set_style_bg_color(cardRtc, lv_color_hex(0x0C0C0E), 0);
+    lv_obj_set_style_border_color(cardRtc, lv_color_hex(0x27272A), 0);
+    lv_obj_set_style_border_width(cardRtc, 1, 0);
+    lv_obj_set_style_radius(cardRtc, 14, 0);
     lv_obj_clear_flag(cardRtc, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *lblRtcTitle = lv_label_create(cardRtc);
-    lv_obj_set_style_text_font(lblRtcTitle, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(lblRtcTitle, lv_color_hex(0xFFFFFF), 0);
-    lv_label_set_text(lblRtcTitle, "Ajustar Hora en Chip RTC:");
-    lv_obj_align(lblRtcTitle, LV_ALIGN_TOP_LEFT, 20, 14);
+    lv_obj_set_style_text_font(lblRtcTitle, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(lblRtcTitle, lv_color_hex(0xA1A1AA), 0);
+    lv_label_set_text(lblRtcTitle, "Ajuste manual de hora");
+    lv_obj_align(lblRtcTitle, LV_ALIGN_TOP_LEFT, 22, 16);
 
-    // 3 botones separados de la etiqueta superior: [+1 Hora] [+1 Min] [-1 Min]
     const char *btnLabels[3] = {"+1 Hora", "+1 Min", "-1 Min"};
     for (int i = 0; i < 3; i++) {
         lv_obj_t *btn = lv_btn_create(cardRtc);
-        lv_obj_set_size(btn, 104, 52);
-        lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 18 + (i * 114), 54);
-        lv_obj_set_style_bg_color(btn, lv_color_hex(0x0288D1), 0);
-        lv_obj_set_style_radius(btn, 12, 0);
+        lv_obj_set_size(btn, 102, 48);
+        lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 18 + (i * 114), 56);
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0x18181B), 0);
+        lv_obj_set_style_border_color(btn, lv_color_hex(0x3F3F46), 0);
+        lv_obj_set_style_border_width(btn, 1, 0);
+        lv_obj_set_style_shadow_width(btn, 0, 0);
+        lv_obj_set_style_radius(btn, 10, 0);
         lv_obj_add_event_cb(btn, btn_adjust_time_cb, LV_EVENT_CLICKED, (void *)(intptr_t)(i + 1));
 
         lv_obj_t *lbl = lv_label_create(btn);
-        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_16, 0);
+        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_14, 0);
+        lv_obj_set_style_text_color(lbl, lv_color_hex(0xF4F4F5), 0);
         lv_label_set_text(lbl, btnLabels[i]);
         lv_obj_center(lbl);
     }
 
-    // --- Tarjeta C: Telemetría de Batería y Botones Físicos (Y = 320..452, alto = 132 px) ---
+    // --- Bloque C: Estado de Batería (Y = 336..464, alto = 128 px) ---
     lv_obj_t *cardBatt = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardBatt, 370, 132);
-    lv_obj_align(cardBatt, LV_ALIGN_TOP_MID, 0, 320);
-    lv_obj_set_style_pad_all(cardBatt, 0, 0); // Cero padding automático del tema
-    lv_obj_set_style_bg_color(cardBatt, lv_color_hex(0x121820), 0);
-    lv_obj_set_style_border_color(cardBatt, lv_color_hex(0x1E293B), 0);
-    lv_obj_set_style_radius(cardBatt, 18, 0);
+    lv_obj_set_size(cardBatt, 366, 128);
+    lv_obj_align(cardBatt, LV_ALIGN_TOP_MID, 0, 336);
+    lv_obj_set_style_pad_all(cardBatt, 0, 0);
+    lv_obj_set_style_bg_color(cardBatt, lv_color_hex(0x0C0C0E), 0);
+    lv_obj_set_style_border_color(cardBatt, lv_color_hex(0x27272A), 0);
+    lv_obj_set_style_border_width(cardBatt, 1, 0);
+    lv_obj_set_style_radius(cardBatt, 14, 0);
     lv_obj_clear_flag(cardBatt, LV_OBJ_FLAG_SCROLLABLE);
 
     lblBatteryInfo = lv_label_create(cardBatt);
-    lv_obj_set_style_text_font(lblBatteryInfo, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(lblBatteryInfo, lv_color_hex(0x00E676), 0);
+    lv_obj_set_style_text_font(lblBatteryInfo, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(lblBatteryInfo, lv_color_hex(0xD4D4D8), 0);
     lv_label_set_text(lblBatteryInfo, "Bateria: 100% (4110 mV)");
-    lv_obj_align(lblBatteryInfo, LV_ALIGN_TOP_LEFT, 20, 14);
+    lv_obj_align(lblBatteryInfo, LV_ALIGN_TOP_LEFT, 22, 16);
 
     barBattery = lv_bar_create(cardBatt);
-    lv_obj_set_size(barBattery, 330, 18);
-    lv_obj_align(barBattery, LV_ALIGN_TOP_MID, 0, 54);
+    lv_obj_set_size(barBattery, 322, 12);
+    lv_obj_align(barBattery, LV_ALIGN_TOP_MID, 0, 56);
     lv_bar_set_range(barBattery, 0, 100);
     lv_bar_set_value(barBattery, 100, LV_ANIM_OFF);
-    lv_obj_set_style_bg_color(barBattery, lv_color_hex(0x263238), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(barBattery, lv_color_hex(0x00E676), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(barBattery, lv_color_hex(0x27272A), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(barBattery, lv_color_hex(0xD4D4D8), LV_PART_INDICATOR);
 
     lblButtonEvent = lv_label_create(cardBatt);
     lv_obj_set_style_text_font(lblButtonEvent, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(lblButtonEvent, lv_color_hex(0xB0BEC5), 0);
-    lv_label_set_text(lblButtonEvent, "Boton fisico: Listo (PWR / BOOT)");
-    lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 20, 94);
-
-    lv_obj_t *lblBackHint = lv_label_create(tileSettings);
-    lv_obj_set_style_text_font(lblBackHint, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(lblBackHint, lv_color_hex(0x607D8B), 0);
-    lv_label_set_text(lblBackHint, "<< Desliza a la derecha para ver el Reloj");
-    lv_obj_align(lblBackHint, LV_ALIGN_BOTTOM_MID, 0, -14);
+    lv_obj_set_style_text_color(lblButtonEvent, lv_color_hex(0x71717A), 0);
+    lv_label_set_text(lblButtonEvent, "Sistema activo");
+    lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 22, 88);
 }
 
 bool ui_manager_init() {
@@ -280,7 +284,7 @@ void ui_manager_sync_brightness(uint8_t brightness) {
     }
     if (lblBrightVal) {
         int pct = (brightness * 100) / 255;
-        lv_label_set_text_fmt(lblBrightVal, "Brillo AMOLED: %d%% (%u/255)", pct, brightness);
+        lv_label_set_text_fmt(lblBrightVal, "Brillo de pantalla: %d%%", pct);
     }
     scr_watchface_update_power(cachedPower, brightness);
 }

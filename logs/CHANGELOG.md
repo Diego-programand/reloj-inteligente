@@ -11,8 +11,8 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ### Añadido (Added)
 * Módulo `hal_rtc` (`firmware/hal/hal_rtc.h` y `firmware/hal/hal_rtc.cpp`): Driver I2C para el reloj de tiempo real `PCF85063` (`0x51`) con conversión BCD, detección de parada de oscilador y cálculo automático del día de la semana.
 * Módulo `time_sync` (`firmware/services/time_sync.h` y `firmware/services/time_sync.cpp`): Sincronización horaria por comando serie USB (`TYYYY-MM-DD HH:MM:SS`) y cliente NTP Wi-Fi para zona horaria `UTC-5`.
-* Esfera de reloj personalizada `scr_watchface` (`firmware/ui/screens/scr_watchface.h` y `firmware/ui/screens/scr_watchface.cpp`): Diseño limpio de tarjetas sin barra ni conteo de segundos (0% uso de CPU/QSPI durante 59 de cada 60 segundos), día y fecha en español, dígitos de hora en fuente `montserrat_48`, cambio táctil entre formato `24H` y `12H (AM/PM)` al tocar la hora, y tarjetas inferiores de batería (`%` y `mV`) y brillo con `pad_all = 0` para evitar cualquier solapamiento de textos.
-* Controles táctiles de ajuste rápido de hora (`+1 Hora`, `+1 Min`, `-1 Min`) en la segunda pantalla deslizable (`ui_manager.cpp`).
+* Esfera de reloj personalizada `scr_watchface` (`firmware/ui/screens/scr_watchface.h` y `firmware/ui/screens/scr_watchface.cpp`): Diseño minimalista formal y exclusivo sobre negro puro AMOLED (`#000000`), sin tarjetas ni colores estridentes, mostrando únicamente hora (`#F4F4F5`) y fecha/día en tonos neutros de titanio y plata (`#A1A1AA`, `#71717A`), con redibujado únicamente 1 vez por minuto.
+* Panel de ajustes secundario (`ui_manager.cpp`) unificado en paleta monocromática sobria con controles de brillo, ajuste de hora (`+1 Hora`, `+1 Min`, `-1 Min`) y estado de batería.
 * Parámetro `-SyncTime` en `scripts/monitor_serial.ps1` para sincronizar automáticamente la hora de Windows al reloj por `COM5`.
 
 ---

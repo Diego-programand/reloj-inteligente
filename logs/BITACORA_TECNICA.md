@@ -107,8 +107,9 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
      * **Ajuste manual en pantalla:** Botones táctiles `+1 Hora`, `+1 Min` y `Seg = 00` en la pantalla secundaria de Control Rápido.
   3. **Diseño de nuestra primera esfera de reloj (`scr_watchface`):**
      * Se habilitaron las fuentes `LV_FONT_MONTSERRAT_28`, `36` y `48` en `firmware/lv_conf.h`.
-     * Por optimización de energía y limpieza visual, se eliminó la barra/anillo de segundos y el segundero continuo: ahora `scr_watchface_update_time()` mantiene la pantalla 100% estática durante 59 de cada 60 segundos y solo redibuja cuando cambia el minuto, la hora o el formato (`12H AM/PM` vs `24H`).
-     * Se corrigió el solapamiento de textos aplicando `lv_obj_set_style_pad_all(..., 0, 0)` en todas las tarjetas (`cardClock`, `cardLeft`, `cardRight`, `cardBright`, `cardRtc`, `cardBatt`) —ya que el tema por defecto de LVGL con `DPI=130` inyectaba `21 px` de relleno interno arriba y abajo— y definiendo coordenadas verticales explícitas y holgadas para cada título y valor.
+     * **Estética minimalista, formal y exclusiva (tonos neutros):** A petición del usuario, se eliminaron por completo las tarjetas (`cards`), barras de estado, textos de guía y colores neón de la Watchface principal. Sobre un fondo negro puro `#000000` (que apaga los píxeles AMOLED para fundirse con el bisel del reloj), se muestra únicamente el día de la semana en tono titanio (`#71717A`), la hora principal centrada en blanco alabastro (`#F4F4F5`), una línea divisoria de `1 px` en grafito (`#27272A`) y la fecha en plata cepillada (`#A1A1AA`).
+     * **Eficiencia energética máxima:** La pantalla permanece 100% estática durante 59 de cada 60 segundos y solo redibuja cuando cambia el minuto, el día o el formato (`24H` vs `12H`).
+     * El panel secundario de Ajustes (`ui_manager.cpp`) también se unificó bajo la misma paleta monocromática de grafito y plata cepillada con `pad_all = 0` y sin barras de desplazamiento visibles.
 * **Resultado / Verificación en COM5:**
   * Salida verificada en `COM5`:
     * `[TIME_SYNC] Hora actualizada en chip RTC PCF85063: 2026-11-05 16:54:17`
