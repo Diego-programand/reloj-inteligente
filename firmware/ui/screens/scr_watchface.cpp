@@ -17,14 +17,14 @@ static lv_obj_t *lblTimeMain = nullptr;
 static lv_obj_t *lblAmPm     = nullptr;
 static lv_obj_t *lblDateStr  = nullptr;
 
-static bool use24HourFormat = true; // Por defecto 24H sobrio (tocar la pantalla alterna 12H/24H)
-static WatchDateTime lastTime = {2026, 11, 5, 4, 17, 10, 0, true};
+static bool use24HourFormat = false; // Por defecto formato 12H con AM/PM visible
+static WatchDateTime lastTime = {2026, 11, 5, 4, 17, 20, 0, true};
 
 // Cache para redibujar únicamente cuando cambia el minuto, el día o el formato
 static int16_t renderedHour   = -1;
 static int16_t renderedMinute = -1;
 static int16_t renderedDay    = -1;
-static bool    renderedFormat = false;
+static bool    renderedFormat = true;
 
 static const char* DIAS_SEMANA[] = {
     "DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"
@@ -57,22 +57,22 @@ void scr_watchface_build(lv_obj_t *parentTile) {
     lv_obj_set_style_text_color(lblWeekday, lv_color_hex(0x71717A), 0);
     lv_obj_set_style_text_letter_space(lblWeekday, 6, 0);
     lv_label_set_text(lblWeekday, "JUEVES");
-    lv_obj_align(lblWeekday, LV_ALIGN_CENTER, 0, -68);
+    lv_obj_align(lblWeekday, LV_ALIGN_CENTER, 0, -76);
 
     // 2. Hora principal centrada (blanco alabastro #F4F4F5, fuente 48pt con tracking sutil)
     lblTimeMain = lv_label_create(parentTile);
     lv_obj_set_style_text_font(lblTimeMain, &lv_font_montserrat_48, 0);
     lv_obj_set_style_text_color(lblTimeMain, lv_color_hex(0xF4F4F5), 0);
     lv_obj_set_style_text_letter_space(lblTimeMain, 3, 0);
-    lv_label_set_text(lblTimeMain, "17:10");
-    lv_obj_align(lblTimeMain, LV_ALIGN_CENTER, 0, -12);
+    lv_label_set_text(lblTimeMain, "05:20");
+    lv_obj_align(lblTimeMain, LV_ALIGN_CENTER, 0, -18);
 
-    // 3. Indicador discreto AM/PM (solo visible en modo 12H, oculto en 24H)
+    // 3. Indicador AM/PM en tono plata cepillada (#A1A1AA, fuente 16pt legible y sobria)
     lblAmPm = lv_label_create(parentTile);
-    lv_obj_set_style_text_font(lblAmPm, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(lblAmPm, lv_color_hex(0x71717A), 0);
-    lv_obj_set_style_text_letter_space(lblAmPm, 3, 0);
-    lv_label_set_text(lblAmPm, "");
+    lv_obj_set_style_text_font(lblAmPm, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(lblAmPm, lv_color_hex(0xA1A1AA), 0);
+    lv_obj_set_style_text_letter_space(lblAmPm, 4, 0);
+    lv_label_set_text(lblAmPm, "PM");
     lv_obj_align(lblAmPm, LV_ALIGN_CENTER, 0, 26);
 
     // 4. Línea divisoria minimalista de 1 píxel (grafito #27272A)
@@ -81,7 +81,7 @@ void scr_watchface_build(lv_obj_t *parentTile) {
     lv_obj_set_style_pad_all(divider, 0, 0);
     lv_obj_set_style_border_width(divider, 0, 0);
     lv_obj_set_style_bg_color(divider, lv_color_hex(0x27272A), 0);
-    lv_obj_align(divider, LV_ALIGN_CENTER, 0, 48);
+    lv_obj_align(divider, LV_ALIGN_CENTER, 0, 54);
 
     // 5. Fecha sobria en tono plata cepillada (#A1A1AA)
     lblDateStr = lv_label_create(parentTile);
@@ -89,7 +89,7 @@ void scr_watchface_build(lv_obj_t *parentTile) {
     lv_obj_set_style_text_color(lblDateStr, lv_color_hex(0xA1A1AA), 0);
     lv_obj_set_style_text_letter_space(lblDateStr, 3, 0);
     lv_label_set_text(lblDateStr, "05 NOVIEMBRE");
-    lv_obj_align(lblDateStr, LV_ALIGN_CENTER, 0, 74);
+    lv_obj_align(lblDateStr, LV_ALIGN_CENTER, 0, 80);
 
     renderedHour   = -1;
     renderedMinute = -1;

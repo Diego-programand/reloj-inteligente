@@ -53,6 +53,11 @@ uint8_t hal_display_get_brightness();
 void hal_display_set_power(bool on);
 
 /**
+ * @brief Devuelve true si la pantalla AMOLED está encendida.
+ */
+bool hal_display_is_on();
+
+/**
  * @brief Envía un bloque rectangular de píxeles (RGB565) a la pantalla por QSPI.
  *        Esta función es la que usará tanto nuestro código como el motor gráfico LVGL.
  */

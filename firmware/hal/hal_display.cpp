@@ -22,6 +22,7 @@
 static spi_device_handle_t lcdSpiHandle = nullptr;
 static uint16_t *dmaSwapBuffer = nullptr;
 static uint8_t currentBrightness = 220;
+static bool displayPowerOn = true;
 
 /**
  * @brief Envía un comando de control al chip de la pantalla (por 1 línea de datos).
@@ -141,15 +142,25 @@ uint8_t hal_display_get_brightness() {
 
 void hal_display_set_power(bool on) {
     if (on) {
-        sendLcdCmd(0x11, nullptr, 0);
-        delay(20);
-        sendLcdCmd(0x29, nullptr, 0);
-        hal_display_set_brightness(currentBrightness > 0 ? currentBrightness : 200);
+        sendLcdCmd(0x11, nullptr, 0); // Sleep OUT
+        delay(60);
+        sendLcdCmd(0x29, nullptr, 0); // Display ON
+        delay(10);
+        uint8_t restoreBright = (currentBrightness > 0) ? currentBrightness : 220;
+        sendLcdCmd(0x51, &restoreBright, 1);
+        displayPowerOn = true;
     } else {
         uint8_t zero = 0;
-        sendLcdCmd(0x51, &zero, 1);
+        sendLcdCmd(0x51, &zero, 1);   // Brillo a 0 inmediatamente
         sendLcdCmd(0x28, nullptr, 0); // Display OFF
+        delay(10);
+        sendLcdCmd(0x10, nullptr, 0); // Sleep IN (bajo consumo en CO5300)
+        displayPowerOn = false;
     }
+}
+
+bool hal_display_is_on() {
+    return displayPowerOn;
 }
 
 void hal_display_push_colors(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *colorData) {

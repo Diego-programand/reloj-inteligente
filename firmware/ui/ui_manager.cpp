@@ -49,6 +49,12 @@ static void lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area) {
 }
 
 static void lvgl_touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
+    // Si la pantalla está apagada con el botón PWR, ignorar toques accidentales
+    if (!hal_display_is_on()) {
+        data->state = LV_INDEV_STATE_REL;
+        return;
+    }
+
     TouchPoint tp = hal_touch_read();
     if (tp.touched) {
         data->state   = LV_INDEV_STATE_PR;

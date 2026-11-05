@@ -24,8 +24,6 @@
 static uint32_t lastClockTickMs = 0;
 static uint32_t lastTelemetryMs = 0;
 static bool lastBootButtonState = HIGH;
-static const uint8_t BRIGHTNESS_LEVELS[] = {255, 140, 45, 0};
-static int currentBrightnessIndex = 0;
 
 const char* identifyI2CChip(uint8_t address) {
     switch (address) {
@@ -136,16 +134,17 @@ void setup() {
 }
 
 void loop() {
-    // A. Ejecutar el motor gráfico LVGL
-    ui_manager_loop();
+    // A. Si la pantalla está encendida, actualizar LVGL y la hora cada 250 ms
+    if (hal_display_is_on()) {
+        ui_manager_loop();
 
-    // B. Actualizar la esfera del reloj (Watchface) leyendo el chip RTC cada 250 ms
-    if (millis() - lastClockTickMs >= 250) {
-        lastClockTickMs = millis();
-        ui_manager_update_time(hal_rtc_get_time());
+        if (millis() - lastClockTickMs >= 250) {
+            lastClockTickMs = millis();
+            ui_manager_update_time(hal_rtc_get_time());
+        }
     }
 
-    // C. Detectar botón físico BOOT (GPIO 0)
+    // B. Detectar botón físico BOOT (GPIO 0)
     bool currentBootState = digitalRead(WATCH_BTN_BOOT_PIN);
     if (currentBootState != lastBootButtonState) {
         delay(20);
@@ -159,15 +158,19 @@ void loop() {
         }
     }
 
-    // D. Detectar botón físico PWR (cambio rápido de nivel de brillo / encendido de pantalla)
+    // C. Detectar botón físico PWR (Encender / Apagar la pantalla con 1 toque)
     PwrButtonEvent pwrEvent = hal_power_poll_button();
     if (pwrEvent == PWR_BTN_SHORT_PRESS) {
-        currentBrightnessIndex = (currentBrightnessIndex + 1) % 4;
-        uint8_t newBright = BRIGHTNESS_LEVELS[currentBrightnessIndex];
-        hal_display_set_brightness(newBright);
-        ui_manager_sync_brightness(newBright);
-        ui_manager_notify_button("PWR (Cambio de brillo)");
-        Serial.printf(">>> [BOTON PWR] Brillo ajustado a %u/255 <<<\n", newBright);
+        if (hal_display_is_on()) {
+            hal_display_set_power(false);
+            Serial.println(">>> [BOTON PWR] Pantalla APAGADA (Modo reposo) <<<");
+        } else {
+            ui_manager_update_time(hal_rtc_get_time());
+            ui_manager_loop();
+            hal_display_set_power(true);
+            ui_manager_notify_button("Pantalla encendida con PWR");
+            Serial.println(">>> [BOTON PWR] Pantalla ENCENDIDA <<<");
+        }
     }
 
     // E. Procesar comandos recibidos por el cable USB (COM5)
