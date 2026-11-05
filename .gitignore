@@ -1,0 +1,8 @@
+# Ignorar archivos binarios gigantes de respaldos (32 MB cada uno)
+backups/*.bin
+
+# Ignorar carpetas de compilación temporal
+.pio/
+build/
+*.elf
+*.map
