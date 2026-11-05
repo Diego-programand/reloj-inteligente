@@ -2,9 +2,12 @@
 backups/*.bin
 !backups/factory_backup_32MB.bin
 
-# Ignorar carpetas de compilación temporal
+# Ignorar carpetas de compilación temporal y configuración local del IDE
 .pio/
 build/
+.vscode/
+compile_commands.json
+.clangd
 *.elf
 *.map
 
