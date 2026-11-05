@@ -15,6 +15,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ### Corregido (Fixed)
 * Actualización explícita de ventana vertical (`0x2B` `RASET`) por cada bloque DMA de 30 filas en `hal_display.cpp` para garantizar el pintado y limpieza completa de las 502 filas en el controlador `CO5300`.
+* Callback `lvgl_rounder_cb` en `ui_manager.cpp` que alinea todas las áreas parciales de refresco de LVGL a coordenadas y dimensiones pares (eliminando el rasgado diagonal en `CO5300`) y aumento del bus QSPI a **80 MHz**.
 
 ---
 

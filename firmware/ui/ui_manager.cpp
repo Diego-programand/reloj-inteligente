@@ -43,6 +43,21 @@ static void lvgl_flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t
 }
 
 /**
+ * @brief Redondeador obligatorio para pantallas AMOLED CO5300 / SH8601:
+ *        El chip físico de la pantalla agrupa los píxeles de 2 en 2 (pares).
+ *        Si LVGL intenta actualizar un recuadro con ancho o coordenada impar,
+ *        las filas se desfasan diagonalmente y la imagen se ve "rasgada" o deformada.
+ *        Esta función fuerza siempre coordenadas iniciales pares (0, 2, 4...)
+ *        y coordenadas finales impares (1, 3, 5...) para que ancho y alto sean siempre pares.
+ */
+static void lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area) {
+    area->x1 = area->x1 & ~0x01; // Redondear hacia abajo a número PAR
+    area->y1 = area->y1 & ~0x01; // Redondear hacia abajo a número PAR
+    area->x2 = area->x2 | 0x01;  // Redondear hacia arriba a número IMPAR (ancho par)
+    area->y2 = area->y2 | 0x01;  // Redondear hacia arriba a número IMPAR (alto par)
+}
+
+/**
  * @brief Puente entre LVGL y nuestro lector táctil FT3168 (hal_touch_read).
  */
 static void lvgl_touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
@@ -246,10 +261,11 @@ bool ui_manager_init() {
     // 2. Registrar el controlador de pantalla (410 x 502) en LVGL
     static lv_disp_drv_t dispDrv;
     lv_disp_drv_init(&dispDrv);
-    dispDrv.hor_res  = WATCH_LCD_WIDTH;
-    dispDrv.ver_res  = WATCH_LCD_HEIGHT;
-    dispDrv.flush_cb = lvgl_flush_cb;
-    dispDrv.draw_buf = &drawBuf;
+    dispDrv.hor_res    = WATCH_LCD_WIDTH;
+    dispDrv.ver_res    = WATCH_LCD_HEIGHT;
+    dispDrv.flush_cb   = lvgl_flush_cb;
+    dispDrv.rounder_cb = lvgl_rounder_cb; // Garantiza bloques pares sin deformación en CO5300
+    dispDrv.draw_buf   = &drawBuf;
     lv_disp_drv_register(&dispDrv);
 
     // 3. Registrar el panel táctil capacitivo FT3168 en LVGL

@@ -87,6 +87,7 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
   3. **Interfaz interactiva deslizable (`lv_tileview`):**
      * **Pantalla 1:** Tarjeta de batería en tiempo real (`%`, `mV`, estado USB), barra deslizante táctil (*slider*) que regula el brillo AMOLED en vivo, y monitor en pantalla de coordenadas táctiles $(X, Y)$ y botones físicos (`BOOT` y `PWR`).
      * **Pantalla 2 (Swipe a la izquierda):** Anillo interactivo (`lv_arc`) y botón contador de toques a 60 FPS.
+  4. **Alineación de píxeles pares (`lvgl_rounder_cb`) y QSPI a 80 MHz:** Al probar actualizaciones parciales de widgets (como arrastrar el *slider* o hacer *swipe*), se observó deformación/rasgado diagonal porque el controlador `CO5300` requiere que toda ventana de memoria (`CASET`/`RASET`) inicie en coordenada par (`0, 2, 4...`) y tenga ancho/alto par. Se registró `dispDrv.rounder_cb = lvgl_rounder_cb` en `ui_manager.cpp` y se elevó el reloj QSPI a **80 MHz**.
 * **Resultado / Verificación en COM5:**
   * Salida verificada en `COM5`: `Memoria PSRAM: 8189 KB total (7787 KB libres tras buffers LVGL) | Motor Grafico: LVGL v8.3 activo en 410x502 QSPI`.
 * **Cómo Revertir (Rollback):**

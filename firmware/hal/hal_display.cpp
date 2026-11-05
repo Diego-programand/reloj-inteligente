@@ -71,12 +71,12 @@ bool hal_display_init() {
         return false;
     }
 
-    // 3. Registrar el dispositivo de pantalla en el bus QSPI a 40 MHz
+    // 3. Registrar el dispositivo de pantalla en el bus QSPI a 80 MHz
     spi_device_interface_config_t devcfg = {};
     devcfg.command_bits   = 8;
     devcfg.address_bits   = 24;
     devcfg.mode           = 0;
-    devcfg.clock_speed_hz = 40 * 1000 * 1000; // 40 MHz en 4 carriles = 160 Mbit/s
+    devcfg.clock_speed_hz = 80 * 1000 * 1000; // 80 MHz en 4 carriles = 320 Mbit/s (máxima fluidez)
     devcfg.spics_io_num   = WATCH_LCD_CS_PIN; // GPIO 12 (Chip Select)
     devcfg.queue_size     = 10;
     devcfg.flags          = SPI_DEVICE_HALFDUPLEX;
@@ -167,9 +167,9 @@ void hal_display_push_colors(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
     };
     sendLcdCmd(0x2A, caset, 4);
 
-    // 2. Cuántas filas caben en cada bloque DMA sin superar DMA_CHUNK_PIXELS
-    uint16_t maxRowsPerChunk = DMA_CHUNK_PIXELS / w;
-    if (maxRowsPerChunk == 0) maxRowsPerChunk = 1;
+    // 2. Cuántas filas caben en cada bloque DMA sin superar DMA_CHUNK_PIXELS (siempre múltiplo par de 2)
+    uint16_t maxRowsPerChunk = (DMA_CHUNK_PIXELS / w) & ~0x01;
+    if (maxRowsPerChunk == 0) maxRowsPerChunk = 2;
 
     // 3. Enviar franja por franja actualizando la ventana vertical (0x2B) y usando 0x2C (RAMWR)
     //    Nota técnica: En el chip CO5300, al levantar CS al final de cada transacción QSPI,
