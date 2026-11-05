@@ -75,3 +75,4 @@ Subiste un programa nuevo y de repente:
    python -m esptool --chip esp32s3 --port COM5 erase-flash
    ```
 7. Una vez flasheado el código corregido, presiona el botón `PWR` o reconecta el USB para arrancar normalmente.
+

@@ -74,3 +74,4 @@ G:\ITM\reloj-inteligente\
 * [05 - Arquitectura de Software del Smartwatch](file:///G:/ITM/reloj-inteligente/docs/05-arquitectura-smartwatch.md)
 * [06 - Roadmap y Fases de Desarrollo](file:///G:/ITM/reloj-inteligente/docs/06-roadmap-y-fases.md)
 * [Bitácora Técnica](file:///G:/ITM/reloj-inteligente/logs/BITACORA_TECNICA.md) | [Changelog](file:///G:/ITM/reloj-inteligente/logs/CHANGELOG.md)
+

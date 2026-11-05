@@ -9,7 +9,7 @@ Para avanzar con velocidad y **cero errores acumulados**, construiremos el reloj
 * [x] Extraer el log de arranque original y la tabla de particiones de fábrica.
 * [x] Instalar `esptool` v5.6.0 en el entorno de Windows.
 * [x] Crear toda la estructura documental y scripts de automatización en `G:\ITM\reloj-inteligente`.
-* [ ] **Siguiente paso inmediato:** Ejecutar `.\scripts\backup_flash_32mb.ps1` para guardar la copia de seguridad íntegra de 32 MB (`backups\factory_backup_32MB.bin`) y verificar su hash SHA256.
+* [x] **Respaldo de fábrica completado:** Ejecutado `.\scripts\backup_flash_32mb.ps1` (`backups\factory_backup_32MB.bin`, `33,554,432` bytes, SHA256: `3883DB5C407AD1ABD9B60942B42ABF30636206DDA3402ACA5D38960B40214D30`).
 
 ---
 
@@ -69,3 +69,4 @@ Para avanzar con velocidad y **cero errores acumulados**, construiremos el reloj
   * **Notificaciones del Teléfono (BLE):** Recibir notificaciones de tu móvil por Bluetooth Low Energy.
   * **Asistente de Voz IA a medida:** Aprovechar los 2 micrófonos (`ES7210`) y el altavoz (`ES8311`) para enviar comandos de voz o notas cuando tú lo decidas.
   * **Reproductor / Galería en MicroSD:** Leer archivos desde la ranura TF (`GPIO 1, 2, 3`).
+

@@ -77,3 +77,4 @@ Para mantener nuestro código limpio, rápido y fácil de mantener, nos apoyarem
    * **`Arduino_GFX`** (por Moon On Our Nation) o el driver QSPI directo de `esp_lcd_sh8601` / `esp_lcd_co5300` proporcionado en el paquete de soporte de Waveshare.
 3. **Motor de Interfaz Gráfica (UI):**
    * **`lvgl`** (Light and Versatile Graphics Library, versión `8.3.x` o `9.x`): Configurado con *double buffering* en los **8 MB de Octal PSRAM** para lograr transiciones de pantalla ultra fluidas sin parpadeos.
+

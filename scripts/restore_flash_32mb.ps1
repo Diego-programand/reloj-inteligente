@@ -33,3 +33,4 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Error "Hubo un error durante la restauracion. Si el puerto COM desaparecio, entra en modo BOOT (Mantener BOOT + presionar PWR)."
 }
+

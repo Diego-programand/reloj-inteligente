@@ -25,3 +25,5 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
   * `monitor_serial.ps1`: Monitor serie ligero para leer `COM5` desde terminal.
 * Archivo `CONTEXTO_PARA_AGENTE.md` para garantizar continuidad perfecta entre sesiones de trabajo.
 * Copia de la foto de la tarjeta de soporte original en `assets/tarjeta_soporte_spotpear.jpg`.
+* Respaldo completo de los 32 MB de Flash de fábrica (`backups/factory_backup_32MB.bin`, SHA256 `3883DB5C407AD1ABD9B60942B42ABF30636206DDA3402ACA5D38960B40214D30`) y archivo de verificación `backups/factory_backup_32MB.bin.sha256`.
+

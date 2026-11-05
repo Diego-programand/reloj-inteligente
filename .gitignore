@@ -6,3 +6,4 @@ backups/*.bin
 build/
 *.elf
 *.map
+

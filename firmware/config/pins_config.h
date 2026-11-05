@@ -75,3 +75,4 @@
 #define WATCH_BTN_BOOT_PIN          0     // Activo en LOW
 // Nota: El botón PWR se lee vía I2C a través del registro de eventos del AXP2101.
 // PROHIBIDO USAR GPIO 35 (Conflicto con Octal PSRAM SPIDQS).
+

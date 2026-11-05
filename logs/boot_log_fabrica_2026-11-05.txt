@@ -110,3 +110,4 @@ I (2005) LVGL: Starting LVGL task
 I (2006) ESP32-S3-Touch-AMOLED-2.06: Initialize SPI bus
 I (2006) sh8601: LCD panel create success, version: 1.0.2
 I (2382) ESP32-S3-Touch-AMOLED-2.06: Backlight on
+

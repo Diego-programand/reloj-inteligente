@@ -53,3 +53,4 @@ Cada vez que hagamos un cambio en el proyecto, sigue este ciclo:
 3. **Implementar y Compilar:** Hacer cambios pequeños, aislados y verificables en `firmware/`.
 4. **Probar y Monitorear:** Flashear al puerto `COM5` y verificar la salida serie con [`scripts/monitor_serial.ps1`](file:///G:/ITM/reloj-inteligente/scripts/monitor_serial.ps1).
 5. **Documentar:** Registrar lo realizado en [`logs/BITACORA_TECNICA.md`](file:///G:/ITM/reloj-inteligente/logs/BITACORA_TECNICA.md) y actualizar [`logs/CHANGELOG.md`](file:///G:/ITM/reloj-inteligente/logs/CHANGELOG.md).
+

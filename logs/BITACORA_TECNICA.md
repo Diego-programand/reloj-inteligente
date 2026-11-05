@@ -26,6 +26,22 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #002 — 2026-11-05: Respaldo Íntegro de Fábrica (32 MB Flash) y Cierre de Fase 0
+
+* **Fase del Roadmap:** Fase 0 (Completada)
+* **Archivos Modificados:** `backups/factory_backup_32MB.bin` (local), `backups/factory_backup_32MB.bin.sha256`, `backups/README_BACKUPS.md`, `docs/06-roadmap-y-fases.md`
+* **Qué se hizo:**
+  * Se ejecutó `powershell -ExecutionPolicy Bypass -File .\scripts\backup_flash_32mb.ps1` con el reloj conectado en `COM5` a `921600` baudios.
+  * `esptool v5.6.0` leyó los `33,554,432` bytes (`0x00000000` a `0x02000000`) en 177.9 segundos (1509.3 kbit/s) y reinició el reloj automáticamente vía RTS.
+  * Se verificó y registró el hash SHA256 de la imagen extraída: `3883DB5C407AD1ABD9B60942B42ABF30636206DDA3402ACA5D38960B40214D30`.
+* **Resultado / Verificación en COM5:**
+  * Archivo `backups/factory_backup_32MB.bin` creado con tamaño exacto de `33,554,432` bytes y reloj funcionando con normalidad tras el reinicio.
+* **Cómo Revertir (Rollback):**
+  * En cualquier fase futura, para volver al estado exacto de fábrica basta con ejecutar:
+    `powershell -ExecutionPolicy Bypass -File .\scripts\restore_flash_32mb.ps1 -BackupFile "G:\ITM\reloj-inteligente\backups\factory_backup_32MB.bin"`
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown
@@ -40,3 +56,4 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 * **Cómo Revertir (Rollback):**
   * Comando Git (`git checkout ...`) o script de restauración para volver al estado estable anterior.
 ```
+

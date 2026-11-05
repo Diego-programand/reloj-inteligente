@@ -66,3 +66,4 @@ El bootloader de 2ª etapa reportó la siguiente estructura de particiones en la
   * Email Soporte: `techsupport@spotpear.com` | Ventas: `sales@spotpear.com`
 * **Log de arranque íntegro guardado en:**
   * [`logs/boot_log_fabrica_2026-11-05.txt`](file:///G:/ITM/reloj-inteligente/logs/boot_log_fabrica_2026-11-05.txt)
+

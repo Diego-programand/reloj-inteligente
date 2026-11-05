@@ -118,3 +118,4 @@ Todos los circuitos integrados de control comparten el mismo bus I2C:
 > [!WARNING]
 > **2. Gestión de Energía del AXP2101:**
 > No configures tensiones superiores a **3.3V** en los reguladores `ALDO1`–`ALDO4` o `BLDO1`–`BLDO2` del AXP2101, ya que alimentan directamente la lógica de 3.3V y 1.8V de los sensores y la pantalla AMOLED.
+

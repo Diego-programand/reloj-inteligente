@@ -9,7 +9,7 @@ En esta carpeta se almacenan los volcados binarios (`.bin`) extraídos de la mem
 
 | Fecha | Nombre de Archivo | Tamaño | Offset | Hash SHA256 | Notas |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| *Pendiente* | `factory_backup_32MB.bin` | `33,554,432` bytes (32 MB) | `0x00000000` | *(Se registrará al ejecutar `scripts\backup_flash_32mb.ps1`)* | Imagen original de fábrica (`ESP-Brookesia phone demo`) |
+| 2026-11-05 | `factory_backup_32MB.bin` | `33,554,432` bytes (32 MB) | `0x00000000` | `3883DB5C407AD1ABD9B60942B42ABF30636206DDA3402ACA5D38960B40214D30` | Imagen original de fábrica (`ESP-Brookesia phone demo`) |
 
 ---
 
@@ -23,3 +23,4 @@ En esta carpeta se almacenan los volcados binarios (`.bin`) extraídos de la mem
   ```powershell
   G:\ITM\reloj-inteligente\scripts\restore_flash_32mb.ps1 -BackupFile "G:\ITM\reloj-inteligente\backups\factory_backup_32MB.bin"
   ```
+

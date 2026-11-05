@@ -40,3 +40,4 @@ try {
 } catch {
     Write-Host "[ERROR] No se pudo abrir $Port : $($_.Exception.Message)" -ForegroundColor Red
 }
+

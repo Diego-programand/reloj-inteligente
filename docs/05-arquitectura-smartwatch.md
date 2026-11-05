@@ -92,3 +92,4 @@ stateDiagram-v2
    * Pasados otros 5 segundos, se apaga el panel AMOLED (`Brightness = 0` / comando `Display Off`).
    * Se reduce la frecuencia de la CPU (por ejemplo a 80 MHz o *Light Sleep*) manteniendo activo el conteo de pasos en el sensor **QMI8658** y la detección del botón `PWR` o toque para despertar en menos de 50 milisegundos.
    * El **Wi-Fi permanece apagado por defecto** y solo se enciende durante unos pocos segundos cuando se necesita sincronizar la hora NTP, consultar el clima o usar funciones de voz/IA.
+
