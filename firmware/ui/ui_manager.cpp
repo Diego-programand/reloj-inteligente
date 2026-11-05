@@ -84,7 +84,9 @@ static void btn_adjust_time_cb(lv_event_t *e) {
         dt.hour = (dt.hour + 1) % 24;
     } else if (mode == 2) {
         dt.minute = (dt.minute + 1) % 60;
+        dt.second = 0;
     } else if (mode == 3) {
+        dt.minute = (dt.minute == 0) ? 59 : (dt.minute - 1);
         dt.second = 0;
     }
     hal_rtc_set_time(dt);
@@ -107,16 +109,19 @@ static void build_ui() {
     scr_watchface_build(tileWatchface);
 
     // 2. Construir el Centro de Control Rápido en la Pantalla 2
+    lv_obj_set_style_pad_all(tileSettings, 0, 0);
+
     lv_obj_t *title2 = lv_label_create(tileSettings);
     lv_obj_set_style_text_font(title2, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(title2, lv_color_hex(0x00E5FF), 0);
     lv_label_set_text(title2, "CENTRO DE CONTROL");
-    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 18);
+    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 16);
 
-    // --- Tarjeta A: Brillo AMOLED ---
+    // --- Tarjeta A: Brillo AMOLED (Y = 52..168, alto = 116 px) ---
     lv_obj_t *cardBright = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardBright, 374, 118);
-    lv_obj_align(cardBright, LV_ALIGN_TOP_MID, 0, 54);
+    lv_obj_set_size(cardBright, 370, 116);
+    lv_obj_align(cardBright, LV_ALIGN_TOP_MID, 0, 52);
+    lv_obj_set_style_pad_all(cardBright, 0, 0); // Cero padding automático del tema
     lv_obj_set_style_bg_color(cardBright, lv_color_hex(0x121820), 0);
     lv_obj_set_style_border_color(cardBright, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_radius(cardBright, 18, 0);
@@ -126,21 +131,22 @@ static void build_ui() {
     lv_obj_set_style_text_font(lblBrightVal, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(lblBrightVal, lv_color_hex(0xFFD54F), 0);
     lv_label_set_text(lblBrightVal, "Brillo AMOLED: 86% (220/255)");
-    lv_obj_align(lblBrightVal, LV_ALIGN_TOP_LEFT, 4, 2);
+    lv_obj_align(lblBrightVal, LV_ALIGN_TOP_LEFT, 20, 16);
 
     sliderBright = lv_slider_create(cardBright);
-    lv_obj_set_size(sliderBright, 326, 26);
-    lv_obj_align(sliderBright, LV_ALIGN_BOTTOM_MID, 0, -8);
+    lv_obj_set_size(sliderBright, 316, 22);
+    lv_obj_align(sliderBright, LV_ALIGN_TOP_MID, 0, 64);
     lv_slider_set_range(sliderBright, 15, 255);
     lv_slider_set_value(sliderBright, hal_display_get_brightness(), LV_ANIM_OFF);
     lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0x00E5FF), LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0xFFFFFF), LV_PART_KNOB);
     lv_obj_add_event_cb(sliderBright, slider_brightness_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
 
-    // --- Tarjeta B: Ajuste Rápido de Hora en el Chip RTC (PCF85063) ---
+    // --- Tarjeta B: Ajuste Rápido de Hora en el Chip RTC (Y = 180..308, alto = 128 px) ---
     lv_obj_t *cardRtc = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardRtc, 374, 128);
-    lv_obj_align(cardRtc, LV_ALIGN_TOP_MID, 0, 184);
+    lv_obj_set_size(cardRtc, 370, 128);
+    lv_obj_align(cardRtc, LV_ALIGN_TOP_MID, 0, 180);
+    lv_obj_set_style_pad_all(cardRtc, 0, 0); // Cero padding automático del tema
     lv_obj_set_style_bg_color(cardRtc, lv_color_hex(0x121820), 0);
     lv_obj_set_style_border_color(cardRtc, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_radius(cardRtc, 18, 0);
@@ -150,14 +156,14 @@ static void build_ui() {
     lv_obj_set_style_text_font(lblRtcTitle, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(lblRtcTitle, lv_color_hex(0xFFFFFF), 0);
     lv_label_set_text(lblRtcTitle, "Ajustar Hora en Chip RTC:");
-    lv_obj_align(lblRtcTitle, LV_ALIGN_TOP_LEFT, 4, 0);
+    lv_obj_align(lblRtcTitle, LV_ALIGN_TOP_LEFT, 20, 14);
 
-    // 3 botones: [+1 Hora] [+1 Min] [Seg = 00]
-    const char *btnLabels[3] = {"+1 Hora", "+1 Min", "Seg :00"};
+    // 3 botones separados de la etiqueta superior: [+1 Hora] [+1 Min] [-1 Min]
+    const char *btnLabels[3] = {"+1 Hora", "+1 Min", "-1 Min"};
     for (int i = 0; i < 3; i++) {
         lv_obj_t *btn = lv_btn_create(cardRtc);
         lv_obj_set_size(btn, 104, 52);
-        lv_obj_align(btn, LV_ALIGN_BOTTOM_LEFT, i * 116, -2);
+        lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 18 + (i * 114), 54);
         lv_obj_set_style_bg_color(btn, lv_color_hex(0x0288D1), 0);
         lv_obj_set_style_radius(btn, 12, 0);
         lv_obj_add_event_cb(btn, btn_adjust_time_cb, LV_EVENT_CLICKED, (void *)(intptr_t)(i + 1));
@@ -168,10 +174,11 @@ static void build_ui() {
         lv_obj_center(lbl);
     }
 
-    // --- Tarjeta C: Telemetría de Batería y Botones Físicos ---
+    // --- Tarjeta C: Telemetría de Batería y Botones Físicos (Y = 320..452, alto = 132 px) ---
     lv_obj_t *cardBatt = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardBatt, 374, 122);
-    lv_obj_align(cardBatt, LV_ALIGN_TOP_MID, 0, 324);
+    lv_obj_set_size(cardBatt, 370, 132);
+    lv_obj_align(cardBatt, LV_ALIGN_TOP_MID, 0, 320);
+    lv_obj_set_style_pad_all(cardBatt, 0, 0); // Cero padding automático del tema
     lv_obj_set_style_bg_color(cardBatt, lv_color_hex(0x121820), 0);
     lv_obj_set_style_border_color(cardBatt, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_radius(cardBatt, 18, 0);
@@ -181,11 +188,11 @@ static void build_ui() {
     lv_obj_set_style_text_font(lblBatteryInfo, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(lblBatteryInfo, lv_color_hex(0x00E676), 0);
     lv_label_set_text(lblBatteryInfo, "Bateria: 100% (4110 mV)");
-    lv_obj_align(lblBatteryInfo, LV_ALIGN_TOP_LEFT, 4, 2);
+    lv_obj_align(lblBatteryInfo, LV_ALIGN_TOP_LEFT, 20, 14);
 
     barBattery = lv_bar_create(cardBatt);
-    lv_obj_set_size(barBattery, 336, 18);
-    lv_obj_align(barBattery, LV_ALIGN_CENTER, 0, 4);
+    lv_obj_set_size(barBattery, 330, 18);
+    lv_obj_align(barBattery, LV_ALIGN_TOP_MID, 0, 54);
     lv_bar_set_range(barBattery, 0, 100);
     lv_bar_set_value(barBattery, 100, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(barBattery, lv_color_hex(0x263238), LV_PART_MAIN);
@@ -195,13 +202,13 @@ static void build_ui() {
     lv_obj_set_style_text_font(lblButtonEvent, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(lblButtonEvent, lv_color_hex(0xB0BEC5), 0);
     lv_label_set_text(lblButtonEvent, "Boton fisico: Listo (PWR / BOOT)");
-    lv_obj_align(lblButtonEvent, LV_ALIGN_BOTTOM_LEFT, 4, 0);
+    lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 20, 94);
 
     lv_obj_t *lblBackHint = lv_label_create(tileSettings);
     lv_obj_set_style_text_font(lblBackHint, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(lblBackHint, lv_color_hex(0x607D8B), 0);
     lv_label_set_text(lblBackHint, "<< Desliza a la derecha para ver el Reloj");
-    lv_obj_align(lblBackHint, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_align(lblBackHint, LV_ALIGN_BOTTOM_MID, 0, -14);
 }
 
 bool ui_manager_init() {

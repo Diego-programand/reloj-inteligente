@@ -107,7 +107,8 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
      * **Ajuste manual en pantalla:** Botones táctiles `+1 Hora`, `+1 Min` y `Seg = 00` en la pantalla secundaria de Control Rápido.
   3. **Diseño de nuestra primera esfera de reloj (`scr_watchface`):**
      * Se habilitaron las fuentes `LV_FONT_MONTSERRAT_28`, `36` y `48` en `firmware/lv_conf.h`.
-     * Se construyó una carátula centrada en un anillo de progreso de `304 × 304` píxeles que avanza segundo a segundo (`0..59`), con fecha y día de la semana en español, hora digital gigante (`48 pt`), segundero con indicador `24H` / `AM` / `PM` (con toque directo sobre la hora para alternar entre formato 12H y 24H) y dos tarjetas inferiores de complicaciones (Batería en `%` y `mV`, y Estado/Brillo/RTC).
+     * Por optimización de energía y limpieza visual, se eliminó la barra/anillo de segundos y el segundero continuo: ahora `scr_watchface_update_time()` mantiene la pantalla 100% estática durante 59 de cada 60 segundos y solo redibuja cuando cambia el minuto, la hora o el formato (`12H AM/PM` vs `24H`).
+     * Se corrigió el solapamiento de textos aplicando `lv_obj_set_style_pad_all(..., 0, 0)` en todas las tarjetas (`cardClock`, `cardLeft`, `cardRight`, `cardBright`, `cardRtc`, `cardBatt`) —ya que el tema por defecto de LVGL con `DPI=130` inyectaba `21 px` de relleno interno arriba y abajo— y definiendo coordenadas verticales explícitas y holgadas para cada título y valor.
 * **Resultado / Verificación en COM5:**
   * Salida verificada en `COM5`:
     * `[TIME_SYNC] Hora actualizada en chip RTC PCF85063: 2026-11-05 16:54:17`
