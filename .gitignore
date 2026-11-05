@@ -1,5 +1,6 @@
-# Ignorar archivos binarios gigantes de respaldos (32 MB cada uno)
+# Ignorar archivos binarios temporales de respaldos, excepto el respaldo maestro de fábrica (32 MB)
 backups/*.bin
+!backups/factory_backup_32MB.bin
 
 # Ignorar carpetas de compilación temporal
 .pio/

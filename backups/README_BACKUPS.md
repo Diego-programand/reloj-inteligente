@@ -1,7 +1,7 @@
 # Registro de Copias de Seguridad (Backups de Memoria Flash)
 
 En esta carpeta se almacenan los volcados binarios (`.bin`) extraídos de la memoria Flash de 32 MB del reloj.
-> *Nota:* Los archivos `.bin` pesados están excluidos de Git en `.gitignore` para mantener el repositorio ligero, pero se conservan localmente en este directorio (`G:\ITM\reloj-inteligente\backups`).
+> *Nota:* El respaldo maestro `factory_backup_32MB.bin` (32 MB) está incluido en el repositorio Git (`!backups/factory_backup_32MB.bin` en `.gitignore`) para que esté disponible automáticamente al clonar el proyecto en cualquier PC.
 
 ---
 
