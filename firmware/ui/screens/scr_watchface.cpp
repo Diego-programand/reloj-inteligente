@@ -11,6 +11,7 @@
  */
 
 #include "scr_watchface.h"
+#include "ui/fonts/font_watch_time_108.h"
 
 static lv_obj_t *lblWeekday  = nullptr;
 static lv_obj_t *lblTimeMain = nullptr;
@@ -51,45 +52,45 @@ void scr_watchface_build(lv_obj_t *parentTile) {
     lv_obj_add_flag(parentTile, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(parentTile, watchface_click_cb, LV_EVENT_CLICKED, nullptr);
 
-    // 1. Día de la semana en mayúsculas con espaciado amplio (tono titanio #71717A)
+    // 1. Día de la semana en tamaño grande y legible (24pt, tono titanio #71717A)
     lblWeekday = lv_label_create(parentTile);
-    lv_obj_set_style_text_font(lblWeekday, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(lblWeekday, lv_color_hex(0x71717A), 0);
-    lv_obj_set_style_text_letter_space(lblWeekday, 6, 0);
+    lv_obj_set_style_text_font(lblWeekday, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(lblWeekday, lv_color_hex(0x8E8E93), 0);
+    lv_obj_set_style_text_letter_space(lblWeekday, 5, 0);
     lv_label_set_text(lblWeekday, "JUEVES");
-    lv_obj_align(lblWeekday, LV_ALIGN_CENTER, 0, -76);
+    lv_obj_align(lblWeekday, LV_ALIGN_CENTER, 0, -116);
 
-    // 2. Hora principal centrada (blanco alabastro #F4F4F5, fuente 48pt con tracking sutil)
+    // 2. Hora principal gigante (108pt tabular anti-aliased, blanco alabastro #F4F4F5)
     lblTimeMain = lv_label_create(parentTile);
-    lv_obj_set_style_text_font(lblTimeMain, &lv_font_montserrat_48, 0);
+    lv_obj_set_style_text_font(lblTimeMain, &font_watch_time_108, 0);
     lv_obj_set_style_text_color(lblTimeMain, lv_color_hex(0xF4F4F5), 0);
-    lv_obj_set_style_text_letter_space(lblTimeMain, 3, 0);
-    lv_label_set_text(lblTimeMain, "05:20");
+    lv_obj_set_style_text_letter_space(lblTimeMain, 4, 0);
+    lv_label_set_text(lblTimeMain, "05:27");
     lv_obj_align(lblTimeMain, LV_ALIGN_CENTER, 0, -18);
 
-    // 3. Indicador AM/PM en tono plata cepillada (#A1A1AA, fuente 16pt legible y sobria)
+    // 3. Indicador AM/PM grande y claro (28pt, tono plata cepillada #A1A1AA)
     lblAmPm = lv_label_create(parentTile);
-    lv_obj_set_style_text_font(lblAmPm, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(lblAmPm, &lv_font_montserrat_28, 0);
     lv_obj_set_style_text_color(lblAmPm, lv_color_hex(0xA1A1AA), 0);
     lv_obj_set_style_text_letter_space(lblAmPm, 4, 0);
     lv_label_set_text(lblAmPm, "PM");
-    lv_obj_align(lblAmPm, LV_ALIGN_CENTER, 0, 26);
+    lv_obj_align(lblAmPm, LV_ALIGN_CENTER, 0, 58);
 
-    // 4. Línea divisoria minimalista de 1 píxel (grafito #27272A)
+    // 4. Línea divisoria minimalista (64 x 2 píxeles, grafito #27272A)
     lv_obj_t *divider = lv_obj_create(parentTile);
-    lv_obj_set_size(divider, 48, 1);
+    lv_obj_set_size(divider, 64, 2);
     lv_obj_set_style_pad_all(divider, 0, 0);
     lv_obj_set_style_border_width(divider, 0, 0);
     lv_obj_set_style_bg_color(divider, lv_color_hex(0x27272A), 0);
-    lv_obj_align(divider, LV_ALIGN_CENTER, 0, 54);
+    lv_obj_align(divider, LV_ALIGN_CENTER, 0, 96);
 
-    // 5. Fecha sobria en tono plata cepillada (#A1A1AA)
+    // 5. Fecha grande y legible en tono plata cepillada (24pt, #A1A1AA)
     lblDateStr = lv_label_create(parentTile);
-    lv_obj_set_style_text_font(lblDateStr, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(lblDateStr, &lv_font_montserrat_24, 0);
     lv_obj_set_style_text_color(lblDateStr, lv_color_hex(0xA1A1AA), 0);
-    lv_obj_set_style_text_letter_space(lblDateStr, 3, 0);
+    lv_obj_set_style_text_letter_space(lblDateStr, 2, 0);
     lv_label_set_text(lblDateStr, "05 NOVIEMBRE");
-    lv_obj_align(lblDateStr, LV_ALIGN_CENTER, 0, 80);
+    lv_obj_align(lblDateStr, LV_ALIGN_CENTER, 0, 128);
 
     renderedHour   = -1;
     renderedMinute = -1;

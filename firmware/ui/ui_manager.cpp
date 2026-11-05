@@ -120,11 +120,11 @@ static void build_ui() {
     lv_obj_set_style_bg_color(tileSettings, lv_color_hex(0x000000), 0);
 
     lv_obj_t *title2 = lv_label_create(tileSettings);
-    lv_obj_set_style_text_font(title2, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(title2, lv_color_hex(0xA1A1AA), 0);
+    lv_obj_set_style_text_font(title2, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(title2, lv_color_hex(0xD4D4D8), 0);
     lv_obj_set_style_text_letter_space(title2, 4, 0);
     lv_label_set_text(title2, "AJUSTES");
-    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 22);
+    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 18);
 
     // --- Bloque A: Brillo AMOLED (Y = 60..176, alto = 116 px) ---
     lv_obj_t *cardBright = lv_obj_create(tileSettings);
@@ -138,14 +138,14 @@ static void build_ui() {
     lv_obj_clear_flag(cardBright, LV_OBJ_FLAG_SCROLLABLE);
 
     lblBrightVal = lv_label_create(cardBright);
-    lv_obj_set_style_text_font(lblBrightVal, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lblBrightVal, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(lblBrightVal, lv_color_hex(0xD4D4D8), 0);
     lv_label_set_text(lblBrightVal, "Brillo de pantalla: 86%");
-    lv_obj_align(lblBrightVal, LV_ALIGN_TOP_LEFT, 22, 18);
+    lv_obj_align(lblBrightVal, LV_ALIGN_TOP_LEFT, 22, 16);
 
     sliderBright = lv_slider_create(cardBright);
-    lv_obj_set_size(sliderBright, 314, 16);
-    lv_obj_align(sliderBright, LV_ALIGN_TOP_MID, 0, 66);
+    lv_obj_set_size(sliderBright, 314, 20);
+    lv_obj_align(sliderBright, LV_ALIGN_TOP_MID, 0, 68);
     lv_slider_set_range(sliderBright, 15, 255);
     lv_slider_set_value(sliderBright, hal_display_get_brightness(), LV_ANIM_OFF);
     lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0x27272A), LV_PART_MAIN);
@@ -153,9 +153,9 @@ static void build_ui() {
     lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0xF4F4F5), LV_PART_KNOB);
     lv_obj_add_event_cb(sliderBright, slider_brightness_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
 
-    // --- Bloque B: Ajuste de Hora (Y = 192..320, alto = 128 px) ---
+    // --- Bloque B: Ajuste de Hora (Y = 192..324, alto = 132 px) ---
     lv_obj_t *cardRtc = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardRtc, 366, 128);
+    lv_obj_set_size(cardRtc, 366, 132);
     lv_obj_align(cardRtc, LV_ALIGN_TOP_MID, 0, 192);
     lv_obj_set_style_pad_all(cardRtc, 0, 0);
     lv_obj_set_style_bg_color(cardRtc, lv_color_hex(0x0C0C0E), 0);
@@ -165,16 +165,16 @@ static void build_ui() {
     lv_obj_clear_flag(cardRtc, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *lblRtcTitle = lv_label_create(cardRtc);
-    lv_obj_set_style_text_font(lblRtcTitle, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lblRtcTitle, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(lblRtcTitle, lv_color_hex(0xA1A1AA), 0);
     lv_label_set_text(lblRtcTitle, "Ajuste manual de hora");
-    lv_obj_align(lblRtcTitle, LV_ALIGN_TOP_LEFT, 22, 16);
+    lv_obj_align(lblRtcTitle, LV_ALIGN_TOP_LEFT, 22, 14);
 
     const char *btnLabels[3] = {"+1 Hora", "+1 Min", "-1 Min"};
     for (int i = 0; i < 3; i++) {
         lv_obj_t *btn = lv_btn_create(cardRtc);
-        lv_obj_set_size(btn, 102, 48);
-        lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 18 + (i * 114), 56);
+        lv_obj_set_size(btn, 104, 54);
+        lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 18 + (i * 114), 58);
         lv_obj_set_style_bg_color(btn, lv_color_hex(0x18181B), 0);
         lv_obj_set_style_border_color(btn, lv_color_hex(0x3F3F46), 0);
         lv_obj_set_style_border_width(btn, 1, 0);
@@ -183,16 +183,16 @@ static void build_ui() {
         lv_obj_add_event_cb(btn, btn_adjust_time_cb, LV_EVENT_CLICKED, (void *)(intptr_t)(i + 1));
 
         lv_obj_t *lbl = lv_label_create(btn);
-        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_14, 0);
+        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_18, 0);
         lv_obj_set_style_text_color(lbl, lv_color_hex(0xF4F4F5), 0);
         lv_label_set_text(lbl, btnLabels[i]);
         lv_obj_center(lbl);
     }
 
-    // --- Bloque C: Estado de Batería (Y = 336..464, alto = 128 px) ---
+    // --- Bloque C: Estado de Batería (Y = 338..470, alto = 132 px) ---
     lv_obj_t *cardBatt = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardBatt, 366, 128);
-    lv_obj_align(cardBatt, LV_ALIGN_TOP_MID, 0, 336);
+    lv_obj_set_size(cardBatt, 366, 132);
+    lv_obj_align(cardBatt, LV_ALIGN_TOP_MID, 0, 338);
     lv_obj_set_style_pad_all(cardBatt, 0, 0);
     lv_obj_set_style_bg_color(cardBatt, lv_color_hex(0x0C0C0E), 0);
     lv_obj_set_style_border_color(cardBatt, lv_color_hex(0x27272A), 0);
@@ -201,24 +201,24 @@ static void build_ui() {
     lv_obj_clear_flag(cardBatt, LV_OBJ_FLAG_SCROLLABLE);
 
     lblBatteryInfo = lv_label_create(cardBatt);
-    lv_obj_set_style_text_font(lblBatteryInfo, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lblBatteryInfo, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(lblBatteryInfo, lv_color_hex(0xD4D4D8), 0);
     lv_label_set_text(lblBatteryInfo, "Bateria: 100% (4110 mV)");
-    lv_obj_align(lblBatteryInfo, LV_ALIGN_TOP_LEFT, 22, 16);
+    lv_obj_align(lblBatteryInfo, LV_ALIGN_TOP_LEFT, 22, 14);
 
     barBattery = lv_bar_create(cardBatt);
-    lv_obj_set_size(barBattery, 322, 12);
-    lv_obj_align(barBattery, LV_ALIGN_TOP_MID, 0, 56);
+    lv_obj_set_size(barBattery, 322, 14);
+    lv_obj_align(barBattery, LV_ALIGN_TOP_MID, 0, 58);
     lv_bar_set_range(barBattery, 0, 100);
     lv_bar_set_value(barBattery, 100, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(barBattery, lv_color_hex(0x27272A), LV_PART_MAIN);
     lv_obj_set_style_bg_color(barBattery, lv_color_hex(0xD4D4D8), LV_PART_INDICATOR);
 
     lblButtonEvent = lv_label_create(cardBatt);
-    lv_obj_set_style_text_font(lblButtonEvent, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lblButtonEvent, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(lblButtonEvent, lv_color_hex(0x71717A), 0);
     lv_label_set_text(lblButtonEvent, "Sistema activo");
-    lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 22, 88);
+    lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 22, 92);
 }
 
 bool ui_manager_init() {
