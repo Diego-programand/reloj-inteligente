@@ -61,6 +61,22 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #004 — 2026-11-05: Fase 2A — Driver QSPI de Pantalla AMOLED (`CO5300`/`SH8601`) y Panel Táctil (`FT3168`)
+
+* **Fase del Roadmap:** Fase 2 (Tareas 1, 2 y 3 completadas)
+* **Archivos Modificados:** `firmware/hal/hal_display.h`, `firmware/hal/hal_display.cpp`, `firmware/hal/hal_touch.h`, `firmware/hal/hal_touch.cpp`, `firmware/main.cpp`
+* **Qué se hizo:**
+  1. **Ingeniería inversa de la tabla de inicialización de fábrica:** Se analizó el binario original `backups/factory_backup_32MB.bin` en el offset `0x2720C4` y se extrajo la tabla exacta de comandos `sh8601_lcd_init_cmd_t`. Se confirmó que la ventana activa de $410 \times 502$ píxeles utiliza un **desplazamiento horizontal (`LCD_COL_OFFSET`) de `0x0016` (`22` píxeles)** (`CASET 0x2A`: `0x0016..0x01AF`, `RASET 0x2B`: `0x0000..0x01F5`).
+  2. **Implementación de `hal_display` (QSPI nativo a 40 MHz con DMA):** Se programó el bus `SPI2_HOST` en modo Quad-SPI de 4 líneas (`GPIO 4, 5, 6, 7`, `SCK=11`, `CS=12`, `RST=8`, `TE=13`) usando `LCD_OPCODE_WRITE_CMD = 0x02` y `LCD_OPCODE_WRITE_COLOR = 0x32` con conversión rápida en buffer DMA y control de brillo digital (`0x51`).
+  3. **Implementación de `hal_touch` (`FT3168` en `0x38`):** Se implementó la lectura de coordenadas $(X, Y)$ consultando primero el pin físico de interrupción táctil `WATCH_TP_INT_PIN` (`GPIO 38 == LOW`) para evitar errores I2C (`NACK`) cuando el controlador táctil entra en reposo sin dedos en pantalla.
+  4. **Lienzo interactivo de prueba en `main.cpp`:** Dibuja barras de color puro RGBW, mira central, trazo en vivo bajo el dedo, cambio de color con el botón `BOOT` y cambio de nivel de brillo (`100% -> 35% -> 8% -> 0%`) con el botón `PWR`.
+* **Resultado / Verificación en COM5:**
+  * Inicialización limpia de `hal_display` y `hal_touch` sin errores en el bus I2C (`Brillo LCD: 220/255`).
+* **Cómo Revertir (Rollback):**
+  * `git checkout a8163d9` para volver al cierre de la Fase 1, o `restore_flash_32mb.ps1` para volver a fábrica.
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown

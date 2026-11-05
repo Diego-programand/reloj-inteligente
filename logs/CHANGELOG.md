@@ -6,6 +6,15 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
+## [0.3.0] - 2026-11-05 — Fase 2A: Controlador QSPI de Pantalla AMOLED y Panel Táctil (`FT3168`)
+
+### Añadido (Added)
+* Módulo `hal_display` (`firmware/hal/hal_display.h` y `firmware/hal/hal_display.cpp`): Driver QSPI de 4 líneas a 40 MHz con DMA para el panel AMOLED `CO5300 / SH8601` ($410 \times 502$), incluyendo el offset de columna de `22` píxeles (`0x16`) extraído del firmware original y control de brillo por software (`0x51`).
+* Módulo `hal_touch` (`firmware/hal/hal_touch.h` y `firmware/hal/hal_touch.cpp`): Driver I2C (`0x38`) para el panel táctil `FT3168` sincronizado con el pin de interrupción `GPIO 38` (`WATCH_TP_INT_PIN`).
+* Lienzo interactivo de prueba en `firmware/main.cpp`: dibujo táctil en tiempo real sobre la pantalla AMOLED, reporte de coordenadas $(X, Y)$ por `COM5`, cambio de color con botón `BOOT` y ajuste de brillo con botón `PWR`.
+
+---
+
 ## [0.2.0] - 2026-11-05 — Fase 1: Entorno Base, Diagnóstico I2C y Gestión de Energía (`AXP2101`)
 
 ### Añadido (Added)

@@ -26,10 +26,10 @@ Para avanzar con velocidad y **cero errores acumulados**, construiremos el reloj
 ## Fase 2: Encendido de Pantalla AMOLED ($410 \times 502$) y Panel Táctil (`FT3168`)
 * **Objetivo:** Dominar la pantalla y el panel táctil con aceleración en PSRAM.
 * **Tareas:**
-  1. Implementar `hal_display` usando el bus QSPI (`GPIO 4, 5, 6, 7, 11, 12, 8, 13`) con el driver `CO5300 / SH8601`.
-  2. Probar el control de brillo por software (de 0% a 100%) y renderizado de colores puros.
-  3. Implementar `hal_touch` (`FT3168` en `0x38`, `RST=9`, `INT=38`) y verificar coordenadas $(X, Y)$ en tiempo real al tocar la pantalla.
-  4. Integrar el motor gráfico **LVGL** con *buffers* en la Octal PSRAM de 8 MB.
+  1. [x] Implementar `hal_display` usando el bus QSPI (`GPIO 4, 5, 6, 7, 11, 12, 8, 13`) con el driver `CO5300 / SH8601` y offset horizontal exacto de `22` píxeles (`0x16`).
+  2. [x] Probar el control de brillo por software (de 0% a 100%) y renderizado de colores puros.
+  3. [x] Implementar `hal_touch` (`FT3168` en `0x38`, `RST=9`, `INT=38`) y verificar coordenadas $(X, Y)$ en tiempo real al tocar la pantalla.
+  4. [ ] Integrar el motor gráfico **LVGL** con *buffers* en la Octal PSRAM de 8 MB.
 * **Criterio de éxito:** Interfaz LVGL funcionando a 60 FPS en pantalla, respondiendo instantáneamente al dedo y deslizando entre pantallas de prueba.
 
 ---
