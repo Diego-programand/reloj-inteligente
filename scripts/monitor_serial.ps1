@@ -28,7 +28,7 @@ try {
     Write-Host "[INFO] Escuchando $Port a $Baud baudios durante $DurationSeconds segundos..." -ForegroundColor Green
     Write-Host "[INFO] Solicitud 'i' enviada al reloj (presiona ahora los botones PWR o BOOT del reloj)..." -ForegroundColor Yellow
     Write-Host "------------------------------------------------------------"
-    $serial.Write("i")
+    $serial.WriteLine("i")
     
     $endTime = (Get-Date).AddSeconds($DurationSeconds)
     while ((Get-Date) -lt $endTime) {

@@ -95,6 +95,28 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #006 — 2026-11-05: Fase 3 Completada — Reloj de Tiempo Real (`PCF85063`), Sincronización Horaria y Primera Watchface a Medida
+
+* **Fase del Roadmap:** Fase 3 (Completada)
+* **Archivos Modificados:** `firmware/lv_conf.h`, `firmware/hal/hal_rtc.h`, `firmware/hal/hal_rtc.cpp`, `firmware/services/time_sync.h`, `firmware/services/time_sync.cpp`, `firmware/ui/screens/scr_watchface.h`, `firmware/ui/screens/scr_watchface.cpp`, `firmware/ui/ui_manager.h`, `firmware/ui/ui_manager.cpp`, `firmware/main.cpp`, `scripts/monitor_serial.ps1`
+* **Qué se hizo:**
+  1. **Driver `hal_rtc` (`PCF85063` en `0x51`):** Se implementó la lectura y escritura en ráfaga de los 7 registros de tiempo (`0x04` a `0x0A`) con conversión bidireccional **BCD** (*Binary-Coded Decimal*), limpieza del bit `OS` (*Oscillator Stop*) y cálculo automático del día de la semana mediante el algoritmo de Sakamoto.
+  2. **Servicio `time_sync` (`firmware/services/time_sync.*`):** Se implementó triple vía para ajustar la hora del chip `PCF85063`:
+     * **Sincronización por USB Serie (`COM5`):** Comando `TYYYY-MM-DD HH:MM:SS` (y parámetro `-SyncTime` en `scripts/monitor_serial.ps1` para copiar en 1 clic la hora exacta de Windows al reloj).
+     * **Sincronización por Wi-Fi NTP (`UTC-5`):** Función `time_sync_from_wifi_ntp()` lista para consultar `pool.ntp.org` y `time.google.com` en segundo plano.
+     * **Ajuste manual en pantalla:** Botones táctiles `+1 Hora`, `+1 Min` y `Seg = 00` en la pantalla secundaria de Control Rápido.
+  3. **Diseño de nuestra primera esfera de reloj (`scr_watchface`):**
+     * Se habilitaron las fuentes `LV_FONT_MONTSERRAT_28`, `36` y `48` en `firmware/lv_conf.h`.
+     * Se construyó una carátula centrada en un anillo de progreso de `304 × 304` píxeles que avanza segundo a segundo (`0..59`), con fecha y día de la semana en español, hora digital gigante (`48 pt`), segundero con indicador `24H` / `AM` / `PM` (con toque directo sobre la hora para alternar entre formato 12H y 24H) y dos tarjetas inferiores de complicaciones (Batería en `%` y `mV`, y Estado/Brillo/RTC).
+* **Resultado / Verificación en COM5:**
+  * Salida verificada en `COM5`:
+    * `[TIME_SYNC] Hora actualizada en chip RTC PCF85063: 2026-11-05 16:54:17`
+    * `[RELOJ RTC] 2026-11-05 16:54:22 | Bateria: 4108 mV (100%) | Brillo: 220/255`
+* **Cómo Revertir (Rollback):**
+  * `git checkout 02e4e9f` para volver al cierre de la Fase 2.
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown

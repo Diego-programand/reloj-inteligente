@@ -34,13 +34,13 @@ Para avanzar con velocidad y **cero errores acumulados**, construiremos el reloj
 
 ---
 
-## Fase 3: Reloj en Tiempo Real (`PCF85063`) y Tu Primera Watchface a Medida
+## Fase 3: Reloj en Tiempo Real (`PCF85063`) y Tu Primera Watchface a Medida — [COMPLETADA]
 * **Objetivo:** Convertir la placa en un reloj funcional y estético diseñado 100% a tu gusto.
 * **Tareas:**
-  1. Implementar `hal_rtc` para leer y guardar la fecha/hora en el chip **PCF85063** (que mantiene la hora incluso si se reinicia el procesador).
-  2. Crear el módulo `time_sync` para conectar unos segundos al Wi-Fi, obtener la hora atómica por servidor NTP (ajustada a tu zona horaria `UTC-5`) y grabarla en el RTC.
-  3. Diseñar e implementar **`scr_watchface`**: tu esfera de reloj principal personalizada (hora, segundos, fecha, día de la semana, icono/porcentaje de batería y estado del sistema).
-* **Criterio de éxito:** El reloj muestra la hora exacta, conserva la hora al apagarse/reiniciarse y luce tu propio diseño visual en alta resolución.
+  1. [x] Implementar `hal_rtc` para leer y guardar la fecha/hora en el chip **PCF85063** (`0x51`, codificación BCD y cálculo automático de día de la semana), manteniendo la hora incluso si se reinicia el procesador.
+  2. [x] Crear el módulo `time_sync` para sincronizar la hora por servidor NTP vía Wi-Fi (`UTC-5`), por puerto serie USB (`TYYYY-MM-DD HH:MM:SS` / `monitor_serial.ps1 -SyncTime`) o desde los botones táctiles del reloj.
+  3. [x] Diseñar e implementar **`scr_watchface`**: esfera de reloj principal personalizada con anillo de progreso de segundos (`304 × 304` px), día y fecha en español, hora gigante (`montserrat_48`) con toque para alternar formato `24H` / `12H (AM/PM)` y tarjetas inferiores de batería y brillo/estado.
+* **Criterio de éxito:** El reloj muestra la hora exacta, conserva la hora al apagarse/reiniciarse y luce tu propio diseño visual en alta resolución. *(Completado en Entrada #006 de la Bitácora).*
 
 ---
 

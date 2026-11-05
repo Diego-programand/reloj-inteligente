@@ -1,15 +1,14 @@
 /**
  * @file main.cpp
- * @brief Fase 2 Completa: Pantalla AMOLED QSPI + Panel Táctil FT3168 + Motor Gráfico LVGL en PSRAM
+ * @brief Fase 3: Reloj en Tiempo Real (PCF85063), Sincronización de Hora y Watchface a Medida
  *
- * Qué hace nuestro sistema al arrancar:
- *   1. Inicializa la energía (AXP2101) en 0x34.
- *   2. Inicializa el panel táctil (FT3168) en 0x38.
- *   3. Inicializa la pantalla AMOLED (410x502) por bus QSPI de 4 carriles.
- *   4. Inicia el motor gráfico LVGL reservando doble buffer (~410 KB) en los 8 MB de Octal PSRAM.
- *   5. Muestra en la pantalla del reloj un centro de control interactivo con 2 pantallas
- *      deslizables con el dedo (Swipe izquierda/derecha), control táctil de brillo,
- *      nivel real de batería y monitor de eventos.
+ * Qué hace nuestro smartwatch al arrancar:
+ *   1. Inicializa la gestión de energía (AXP2101) en 0x34.
+ *   2. Inicializa el Reloj en Tiempo Real (PCF85063) en 0x51 (conserva la hora aunque se apague).
+ *   3. Inicializa el panel táctil (FT3168) en 0x38 y la pantalla AMOLED (410x502) por QSPI a 80 MHz.
+ *   4. Carga en pantalla nuestra Watchface Principal (Pantalla 1) y el Centro de Control (Pantalla 2).
+ *   5. Permite sincronizar la hora exacta por cable USB ("TYYYY-MM-DD HH:MM:SS"), por Wi-Fi NTP (UTC-5)
+ *      o directamente con los botones táctiles del Centro de Control.
  */
 
 #include <Arduino.h>
@@ -18,8 +17,11 @@
 #include "hal/hal_power.h"
 #include "hal/hal_display.h"
 #include "hal/hal_touch.h"
+#include "hal/hal_rtc.h"
+#include "services/time_sync.h"
 #include "ui/ui_manager.h"
 
+static uint32_t lastClockTickMs = 0;
 static uint32_t lastTelemetryMs = 0;
 static bool lastBootButtonState = HIGH;
 static const uint8_t BRIGHTNESS_LEVELS[] = {255, 140, 45, 0};
@@ -56,33 +58,36 @@ void scanI2CBus() {
     Serial.println("============================================================\n");
 }
 
-void updateAndPrintPower() {
+void updateAndPrintStatus() {
+    WatchDateTime dt = hal_rtc_get_time();
     WatchPowerStatus st = hal_power_get_status();
+
+    ui_manager_update_time(dt);
     ui_manager_update_power(st);
 
     Serial.printf(
-        "[ENERGIA] Bateria: %4u mV (%3d%%) | Cargando: %-2s | Brillo LCD: %3u/255 | PSRAM libre: %u KB\n",
-        st.batteryVoltageMv,
-        st.batteryPercent,
-        st.isCharging ? "SI" : "NO",
-        hal_display_get_brightness(),
-        ESP.getFreePsram() / 1024
+        "[RELOJ RTC] %04u-%02u-%02u %02u:%02u:%02u | Bateria: %4u mV (%3d%%) | Brillo: %3u/255\n",
+        dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second,
+        st.batteryVoltageMv, st.batteryPercent, hal_display_get_brightness()
     );
 }
 
 void printSystemReport() {
     Serial.println("\n\n############################################################");
-    Serial.println("#  FIRMWARE PROPIO - RELOJ INTELIGENTE ESP32-S3 (FASE 2)   #");
+    Serial.println("#  FIRMWARE PROPIO - RELOJ INTELIGENTE ESP32-S3 (FASE 3)   #");
     Serial.println("############################################################");
     Serial.printf("  * Procesador (CPU) : %s @ %u MHz (%u nucleos)\n",
                   ESP.getChipModel(), ESP.getCpuFreqMHz(), ESP.getChipCores());
     Serial.printf("  * Memoria Flash    : %u MB\n", ESP.getFlashChipSize() / (1024 * 1024));
-    Serial.printf("  * Memoria PSRAM    : %u KB total (%u KB libres tras buffers LVGL)\n",
+    Serial.printf("  * Memoria PSRAM    : %u KB total (%u KB libres)\n",
                   ESP.getPsramSize() / 1024, ESP.getFreePsram() / 1024);
-    Serial.printf("  * Motor Grafico    : LVGL v8.3 activo en 410x502 QSPI\n");
+    Serial.printf("  * Reloj Hardware   : PCF85063 RTC activo en 0x51\n");
 
     scanI2CBus();
-    updateAndPrintPower();
+    updateAndPrintStatus();
+    Serial.println("\n>>> COMANDOS POR CONSOLA USB (COM5): <<<");
+    Serial.println("  * Envia 'i' -> Ver este reporte completo.");
+    Serial.println("  * Envia 'T2026-11-05 16:55:00' -> Ajustar fecha y hora exacta en el chip RTC.\n");
 }
 
 void setup() {
@@ -98,35 +103,49 @@ void setup() {
     // 1. Iniciar bus I2C compartido
     Wire.begin(WATCH_I2C_SDA_PIN, WATCH_I2C_SCL_PIN, WATCH_I2C_FREQ_HZ);
 
-    // 2. Inicializar gestor de energía AXP2101
-    Serial.println("\n[1/4] Inicializando gestor de energia AXP2101 (0x34)...");
+    // 2. Inicializar gestor de energía AXP2101 (0x34)
+    Serial.println("\n[1/5] Inicializando gestor de energia AXP2101 (0x34)...");
     hal_power_init(Wire);
 
-    // 3. Inicializar panel táctil FT3168
-    Serial.println("[2/4] Inicializando panel tactil FT3168 (0x38)...");
-    hal_touch_init(Wire);
-
-    // 4. Inicializar pantalla AMOLED QSPI (410x502)
-    Serial.println("[3/4] Inicializando pantalla AMOLED QSPI (410x502)...");
-    hal_display_init();
-
-    // 5. Inicializar motor gráfico LVGL con doble buffer en Octal PSRAM
-    Serial.println("[4/4] Inicializando motor grafico LVGL en Octal PSRAM...");
-    if (ui_manager_init()) {
-        Serial.println("  -> [EXITO] Interfaz LVGL cargada en PSRAM.");
+    // 3. Inicializar chip de Reloj en Tiempo Real PCF85063 (0x51)
+    Serial.println("[2/5] Inicializando chip de reloj RTC PCF85063 (0x51)...");
+    if (hal_rtc_init(Wire)) {
+        Serial.println("  -> [EXITO] Chip RTC PCF85063 en marcha.");
     } else {
-        Serial.println("  -> [ERROR] No se pudo reservar memoria PSRAM para LVGL.");
+        Serial.println("  -> [ERROR] No se detecto el chip RTC PCF85063.");
     }
 
+    // 4. Inicializar panel táctil FT3168 (0x38) y pantalla AMOLED QSPI (410x502)
+    Serial.println("[3/5] Inicializando panel tactil FT3168 (0x38)...");
+    hal_touch_init(Wire);
+
+    Serial.println("[4/5] Inicializando pantalla AMOLED QSPI (410x502 @ 80MHz)...");
+    hal_display_init();
+
+    // 5. Inicializar motor gráfico LVGL y construir Watchface + Centro de Control
+    Serial.println("[5/5] Construyendo Watchface principal en LVGL...");
+    ui_manager_init();
+
+    // Actualizar pantalla inmediatamente con la hora actual del RTC
+    ui_manager_update_time(hal_rtc_get_time());
+    ui_manager_update_power(hal_power_get_status());
+
     printSystemReport();
+    lastClockTickMs = millis();
     lastTelemetryMs = millis();
 }
 
 void loop() {
-    // A. Ejecutar el motor gráfico LVGL (refresco de pantalla, animaciones y gestos táctiles)
+    // A. Ejecutar el motor gráfico LVGL
     ui_manager_loop();
 
-    // B. Detectar botón físico BOOT (GPIO 0)
+    // B. Actualizar la esfera del reloj (Watchface) leyendo el chip RTC cada 250 ms
+    if (millis() - lastClockTickMs >= 250) {
+        lastClockTickMs = millis();
+        ui_manager_update_time(hal_rtc_get_time());
+    }
+
+    // C. Detectar botón físico BOOT (GPIO 0)
     bool currentBootState = digitalRead(WATCH_BTN_BOOT_PIN);
     if (currentBootState != lastBootButtonState) {
         delay(20);
@@ -136,13 +155,11 @@ void loop() {
             if (currentBootState == LOW) {
                 Serial.println(">>> [BOTON] Presionado BOOT (GPIO 0) <<<");
                 ui_manager_notify_button("BOOT presionado");
-            } else {
-                ui_manager_notify_button("BOOT soltado");
             }
         }
     }
 
-    // C. Detectar botón físico PWR (vía AXP2101 I2C)
+    // D. Detectar botón físico PWR (cambio rápido de nivel de brillo / encendido de pantalla)
     PwrButtonEvent pwrEvent = hal_power_poll_button();
     if (pwrEvent == PWR_BTN_SHORT_PRESS) {
         currentBrightnessIndex = (currentBrightnessIndex + 1) % 4;
@@ -151,23 +168,26 @@ void loop() {
         ui_manager_sync_brightness(newBright);
         ui_manager_notify_button("PWR (Cambio de brillo)");
         Serial.printf(">>> [BOTON PWR] Brillo ajustado a %u/255 <<<\n", newBright);
-    } else if (pwrEvent == PWR_BTN_LONG_PRESS) {
-        ui_manager_notify_button("PWR (Pulsacion larga)");
-        Serial.println(">>> [BOTON PWR] Pulsacion larga detectada <<<");
     }
 
-    // D. Comando 'i' por consola USB
+    // E. Procesar comandos recibidos por el cable USB (COM5)
     if (Serial.available() > 0) {
-        char cmd = (char)Serial.read();
-        if (cmd == 'i' || cmd == 'I') {
+        String line = Serial.readStringUntil('\n');
+        line.trim();
+        if (line.equalsIgnoreCase("i")) {
             printSystemReport();
+        } else if (line.startsWith("T") || line.startsWith("t")) {
+            line.setCharAt(0, 'T');
+            if (time_sync_from_serial_string(line)) {
+                ui_manager_update_time(hal_rtc_get_time());
+            }
         }
     }
 
-    // E. Actualizar datos de batería en pantalla y consola cada 3 segundos
+    // F. Actualizar telemetría de batería cada 3 segundos
     if (millis() - lastTelemetryMs >= 3000) {
         lastTelemetryMs = millis();
-        updateAndPrintPower();
+        updateAndPrintStatus();
     }
 
     delay(5);
