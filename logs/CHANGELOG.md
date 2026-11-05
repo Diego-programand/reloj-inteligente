@@ -6,6 +6,15 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
+## [0.2.0] - 2026-11-05 — Fase 1: Entorno Base, Diagnóstico I2C y Gestión de Energía (`AXP2101`)
+
+### Añadido (Added)
+* Archivo `platformio.ini` configurado para `ESP32-S3R8` (`qio_opi`, 32 MB Flash, 8 MB Octal PSRAM, USB CDC en `COM5`).
+* Módulo `hal_power` (`firmware/hal/hal_power.h` y `firmware/hal/hal_power.cpp`) para control completo del PMIC `AXP2101` (`0x34`) por I2C sin usar `GPIO 35`.
+* Programa principal `firmware/main.cpp` con verificación de CPU/Flash/PSRAM, despertar del chip táctil `FT3168` (`GPIO 9`), escáner del bus I2C confirmando los 6 chips en placa (`0x18`, `0x34`, `0x38`, `0x40`, `0x51`, `0x6B`), telemetría de batería en vivo y detección de botones `PWR` y `BOOT`.
+
+---
+
 ## [0.1.0] - 2026-11-05 — Inicialización del Proyecto y Diagnóstico de Hardware
 
 ### Añadido (Added)

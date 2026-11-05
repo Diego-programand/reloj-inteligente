@@ -42,6 +42,25 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #003 — 2026-11-05: Fase 1 Completada — Primer Firmware Propio, Escáner I2C (6/6 Chips) y Control de Energía `AXP2101`
+
+* **Fase del Roadmap:** Fase 1 (Completada)
+* **Archivos Modificados:** `platformio.ini`, `firmware/hal/hal_power.h`, `firmware/hal/hal_power.cpp`, `firmware/main.cpp`
+* **Qué se hizo:**
+  1. Se configuró **PlatformIO** (`platformio.ini`) con la plataforma `espressif32 @ 6.9.0`, memoria `qio_opi` (32 MB QIO Flash + 8 MB Octal PSRAM), banderas `ARDUINO_USB_MODE=1` y `ARDUINO_USB_CDC_ON_BOOT=1`, y librería `XPowersLib @ 0.2.9`.
+  2. Se implementó el módulo `hal_power` para inicializar el PMIC **`AXP2101`** (`0x34`) por I2C (`SDA=15`, `SCL=14`), encendiendo los reguladores `ALDO1..4`, `BLDO1..2` y `DLDO1..2` a `3300 mV`, habilitando el ADC de telemetría de batería y configurando la lectura del botón `PWR` por *polling* I2C (sin tocar jamás `GPIO 35`).
+  3. Se descubrió y documentó que el controlador táctil **`FT3168`** (`0x38`) requiere habilitar los rieles `DLDO1/2` y aplicar un pulso de reset en `GPIO 9` (`LOW` 50 ms -> `HIGH` + espera de 300 ms) para despertar y contestar en el bus I2C.
+  4. Se implementó `firmware/main.cpp` con reporte de sistema bajo demanda (tecla `'i'`), escáner I2C con identificación de chips, telemetría periódica de batería y detección en tiempo real de los botones `PWR` y `BOOT`.
+* **Resultado / Verificación en COM5:**
+  * Salida real verificada en `COM5`:
+    * CPU: `ESP32-S3 @ 240 MHz (2 nucleos)`, Flash: `32 MB`, PSRAM: `8189 KB (~7 MB Octal PSRAM activa)`.
+    * Escáner I2C detectó los **6 chips esperados**: `0x18` (`ES8311`), `0x34` (`AXP2101`), `0x38` (`FT3168`), `0x40` (`ES7210`), `0x51` (`PCF85063`), `0x6B` (`QMI8658`).
+    * Telemetría en vivo: `Bateria: 4110 mV (100%) | Cargando: NO | USB (VBUS): 4986 mV | Sistema: 4334 mV`.
+* **Cómo Revertir (Rollback):**
+  * Para volver a la imagen de fábrica: `powershell -ExecutionPolicy Bypass -File .\scripts\restore_flash_32mb.ps1 -BackupFile "G:\ITM\reloj-inteligente\backups\factory_backup_32MB.bin"`
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown

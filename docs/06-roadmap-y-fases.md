@@ -13,13 +13,13 @@ Para avanzar con velocidad y **cero errores acumulados**, construiremos el reloj
 
 ---
 
-## Fase 1: Entorno Base, Diagnóstico I2C y Gestión de Energía (`AXP2101`)
+## Fase 1: Entorno Base, Diagnóstico I2C y Gestión de Energía (`AXP2101`) — [COMPLETADA]
 * **Objetivo:** Compilar y subir nuestro primer programa propio que tome el control seguro de la placa sin depender de nada de fábrica.
 * **Tareas:**
-  1. Configurar el entorno de compilación (Arduino IDE o PlatformIO) con soporte para `ESP32-S3` (32MB QIO + OPI PSRAM).
-  2. Crear un escáner y verificador del bus I2C (`SDA=15`, `SCL=14`) que confirme la presencia de los 6 chips internos (`0x34`, `0x38`, `0x51`, `0x6B`, `0x18`, `0x40`).
-  3. Inicializar el chip **AXP2101** (`hal_power`), encender los rieles de alimentación de periféricos y mostrar por el monitor serie (`COM5`) el voltaje real de la batería, el porcentaje de carga y los eventos al presionar el botón `PWR`.
-* **Criterio de éxito:** Consola serie en `COM5` reportando los 6 dispositivos I2C, telemetría de batería en vivo y detección limpia del botón `PWR` y `BOOT`.
+  1. [x] Configurar el entorno de compilación (`platformio.ini`) con soporte para `ESP32-S3` (`qio_opi`: 32MB QIO Flash + 8MB OPI PSRAM + USB CDC activo).
+  2. [x] Crear un escáner y verificador del bus I2C (`SDA=15`, `SCL=14`) que confirme la presencia de los 6 chips internos (`0x18`, `0x34`, `0x38`, `0x40`, `0x51`, `0x6B`).
+  3. [x] Inicializar el chip **AXP2101** (`hal_power`), encender los rieles de alimentación de periféricos (`ALDO1..4`, `BLDO1..2`, `DLDO1..2`) y mostrar por el monitor serie (`COM5`) el voltaje real de la batería, el porcentaje de carga y los eventos al presionar los botones `PWR` y `BOOT`.
+* **Criterio de éxito:** Consola serie en `COM5` reportando los 6 dispositivos I2C, telemetría de batería en vivo y detección limpia del botón `PWR` y `BOOT`. *(Verificado al 100% en Entrada #003 de la Bitácora).*
 
 ---
 
