@@ -5,11 +5,12 @@
 
 ---
 
-## 1. Objetivo del Usuario
+## 1. Objetivo y Perfil del Usuario
 El usuario compró un reloj de desarrollo **ESP32-S3-Touch-AMOLED-2.06** (distribuido por Spotpear / fabricado por Waveshare) en AliExpress.
 * **No desea conservar la interfaz de fábrica** (`ESP-Brookesia phone demo`).
 * **Objetivo principal:** Programar desde cero su propio sistema operativo / firmware de reloj inteligente hecho 100% a su medida, con control total sobre la estética, funciones, sensores y consumo de batería.
 * **Filosofía de trabajo:** Orden estricto, modularidad, documentación continua en `logs/BITACORA_TECNICA.md` y `logs/CHANGELOG.md`, y capacidad de revertir cualquier cambio en segundos si algo falla.
+* **REGLA DE COMUNICACIÓN (Ver [`AGENTS.md`](file:///G:/ITM/reloj-inteligente/AGENTS.md)):** Es la primera vez que el usuario trabaja con una placa física y programa hardware desde cero. **Nunca des por sentado términos técnicos ni siglas** (`I2C`, `GPIO`, `PSRAM`, `PMIC`, `polling`, `HAL`, `CDC`, etc.). Explícalos siempre con claridad, naturalidad y rigor accesible (sin tono infantil, sino como un mentor técnico claro) a medida que avanzamos.
 
 ---
 
