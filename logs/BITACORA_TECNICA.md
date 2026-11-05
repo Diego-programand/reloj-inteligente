@@ -77,6 +77,23 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #005 — 2026-11-05: Fase 2B Completada — Corrección de Ventana Vertical `CO5300` e Integración de `LVGL` en Octal PSRAM
+
+* **Fase del Roadmap:** Fase 2 (Completada al 100%)
+* **Archivos Modificados:** `platformio.ini`, `firmware/lv_conf.h`, `firmware/hal/hal_display.cpp`, `firmware/ui/ui_manager.h`, `firmware/ui/ui_manager.cpp`, `firmware/main.cpp`
+* **Qué se hizo:**
+  1. **Corrección de barrido por franjas en `hal_display.cpp`:** Se detectó que al liberar `CS` (`GPIO 12`) entre transacciones DMA grandes, el controlador `CO5300` reiniciaba el puntero de fila si se usaba `0x3C` (`RAMWRC`). Se corrigió enviando la ventana vertical exacta (`0x2B` `RASET`: `ys..ye`) y `0x2C` (`RAMWR`) por cada tira de 30 filas (`24,600` bytes < límite DMA de 32 KB), logrando un borrado y renderizado de pantalla completa instantáneo.
+  2. **Integración de `LVGL` (`v8.4.0`) en Octal PSRAM:** Se creó `firmware/lv_conf.h` y el módulo `ui_manager` reservando dos *buffers* de media pantalla (`410 × 251 × 2` bytes cada uno = `~402 KB` totales) en la **Octal PSRAM** (`MALLOC_CAP_SPIRAM`), manteniendo el uso de SRAM interna en apenas `6.4%` y dejando `7,787 KB` libres en PSRAM.
+  3. **Interfaz interactiva deslizable (`lv_tileview`):**
+     * **Pantalla 1:** Tarjeta de batería en tiempo real (`%`, `mV`, estado USB), barra deslizante táctil (*slider*) que regula el brillo AMOLED en vivo, y monitor en pantalla de coordenadas táctiles $(X, Y)$ y botones físicos (`BOOT` y `PWR`).
+     * **Pantalla 2 (Swipe a la izquierda):** Anillo interactivo (`lv_arc`) y botón contador de toques a 60 FPS.
+* **Resultado / Verificación en COM5:**
+  * Salida verificada en `COM5`: `Memoria PSRAM: 8189 KB total (7787 KB libres tras buffers LVGL) | Motor Grafico: LVGL v8.3 activo en 410x502 QSPI`.
+* **Cómo Revertir (Rollback):**
+  * `git checkout 5742552` para volver al lienzo de dibujo directo de la Fase 2A.
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown

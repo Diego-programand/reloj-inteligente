@@ -6,6 +6,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
+## [0.4.0] - 2026-11-05 — Fase 2B Completada: Motor Gráfico `LVGL` en Octal PSRAM y Pantallas Deslizables
+
+### Añadido (Added)
+* Configuración `firmware/lv_conf.h` y librería `lvgl @ 8.4.0` integrada en `platformio.ini`.
+* Módulo `ui_manager` (`firmware/ui/ui_manager.h` y `firmware/ui/ui_manager.cpp`) con doble *buffer* de renderizado (~402 KB) alojado en la Octal PSRAM de 8 MB (`MALLOC_CAP_SPIRAM`).
+* Interfaz táctil deslizable (`lv_tileview`) con 2 pantallas: panel en vivo de batería (`%` y `mV`), control deslizante (*slider*) de brillo AMOLED, monitor de toque/botones y pantalla secundaria con `lv_arc` interactivo y contador táctil.
+
+### Corregido (Fixed)
+* Actualización explícita de ventana vertical (`0x2B` `RASET`) por cada bloque DMA de 30 filas en `hal_display.cpp` para garantizar el pintado y limpieza completa de las 502 filas en el controlador `CO5300`.
+
+---
+
 ## [0.3.0] - 2026-11-05 — Fase 2A: Controlador QSPI de Pantalla AMOLED y Panel Táctil (`FT3168`)
 
 ### Añadido (Added)

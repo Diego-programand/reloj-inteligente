@@ -15,8 +15,8 @@
 #define LCD_OPCODE_WRITE_CMD        0x02
 #define LCD_OPCODE_WRITE_COLOR      0x32
 
-// Tamaño del bloque intermedio en memoria DMA para envíos ultra rápidos (410 * 40 píxeles = 32.8 KB)
-#define DMA_CHUNK_LINES             40
+// Tamaño del bloque intermedio en memoria DMA (30 líneas: 410 * 30 * 2 = 24,600 bytes < límite DMA de 32 KB)
+#define DMA_CHUNK_LINES             30
 #define DMA_CHUNK_PIXELS            (WATCH_LCD_WIDTH * DMA_CHUNK_LINES)
 
 static spi_device_handle_t lcdSpiHandle = nullptr;
@@ -155,6 +155,9 @@ void hal_display_set_power(bool on) {
 void hal_display_push_colors(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *colorData) {
     if (!lcdSpiHandle || !colorData || !dmaSwapBuffer) return;
 
+    uint16_t w = x2 - x1 + 1;
+    uint16_t h = y2 - y1 + 1;
+
     // 1. Definir ventana horizontal sumando el offset físico de 22 columnas (0x16)
     uint16_t xs = x1 + LCD_COL_OFFSET;
     uint16_t xe = x2 + LCD_COL_OFFSET;
@@ -164,44 +167,47 @@ void hal_display_push_colors(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
     };
     sendLcdCmd(0x2A, caset, 4);
 
-    // 2. Definir ventana vertical
-    uint16_t ys = y1 + LCD_ROW_OFFSET;
-    uint16_t ye = y2 + LCD_ROW_OFFSET;
-    uint8_t raset[4] = {
-        (uint8_t)(ys >> 8), (uint8_t)(ys & 0xFF),
-        (uint8_t)(ye >> 8), (uint8_t)(ye & 0xFF)
-    };
-    sendLcdCmd(0x2B, raset, 4);
+    // 2. Cuántas filas caben en cada bloque DMA sin superar DMA_CHUNK_PIXELS
+    uint16_t maxRowsPerChunk = DMA_CHUNK_PIXELS / w;
+    if (maxRowsPerChunk == 0) maxRowsPerChunk = 1;
 
-    // 3. Enviar los píxeles por los 4 carriles QSPI (invirtiendo el orden de bytes a Big-Endian)
-    size_t totalPixels = (size_t)(x2 - x1 + 1) * (size_t)(y2 - y1 + 1);
-    size_t sentPixels = 0;
-    bool firstChunk = true;
-
-    while (sentPixels < totalPixels) {
-        size_t chunk = totalPixels - sentPixels;
-        if (chunk > DMA_CHUNK_PIXELS) {
-            chunk = DMA_CHUNK_PIXELS;
+    // 3. Enviar franja por franja actualizando la ventana vertical (0x2B) y usando 0x2C (RAMWR)
+    //    Nota técnica: En el chip CO5300, al levantar CS al final de cada transacción QSPI,
+    //    cada nuevo bloque debe indicar su fila inicial en 0x2B y escribir con 0x002C00.
+    uint16_t rowsSent = 0;
+    while (rowsSent < h) {
+        uint16_t chunkRows = h - rowsSent;
+        if (chunkRows > maxRowsPerChunk) {
+            chunkRows = maxRowsPerChunk;
         }
 
-        // Las pantallas SPI/QSPI esperan primero el byte alto y luego el byte bajo de cada color
-        for (size_t i = 0; i < chunk; i++) {
-            uint16_t c = colorData[sentPixels + i];
+        uint16_t ys = y1 + rowsSent + LCD_ROW_OFFSET;
+        uint16_t ye = ys + chunkRows - 1;
+        uint8_t raset[4] = {
+            (uint8_t)(ys >> 8), (uint8_t)(ys & 0xFF),
+            (uint8_t)(ye >> 8), (uint8_t)(ye & 0xFF)
+        };
+        sendLcdCmd(0x2B, raset, 4);
+
+        size_t chunkPixels = (size_t)w * (size_t)chunkRows;
+        size_t offsetPixels = (size_t)rowsSent * (size_t)w;
+
+        for (size_t i = 0; i < chunkPixels; i++) {
+            uint16_t c = colorData[offsetPixels + i];
             dmaSwapBuffer[i] = (c >> 8) | (c << 8);
         }
 
         spi_transaction_t t;
         memset(&t, 0, sizeof(t));
-        t.flags     = SPI_TRANS_MODE_QIO; // ¡Enviar datos usando los 4 carriles QSPI a la vez!
+        t.flags     = SPI_TRANS_MODE_QIO;
         t.cmd       = LCD_OPCODE_WRITE_COLOR;
-        t.addr      = firstChunk ? 0x002C00 : 0x003C00; // 0x2C = Iniciar escritura, 0x3C = Continuar escritura
-        t.length    = chunk * 16;
+        t.addr      = 0x002C00;
+        t.length    = chunkPixels * 16;
         t.tx_buffer = dmaSwapBuffer;
 
         spi_device_polling_transmit(lcdSpiHandle, &t);
 
-        sentPixels += chunk;
-        firstChunk = false;
+        rowsSent += chunkRows;
     }
 }
 
@@ -212,43 +218,44 @@ void hal_display_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint1
     if (y + h > WATCH_LCD_HEIGHT) h = WATCH_LCD_HEIGHT - y;
 
     uint16_t x2 = x + w - 1;
-    uint16_t y2 = y + h - 1;
 
     uint16_t xs = x + LCD_COL_OFFSET;
     uint16_t xe = x2 + LCD_COL_OFFSET;
     uint8_t caset[4] = {(uint8_t)(xs >> 8), (uint8_t)(xs & 0xFF), (uint8_t)(xe >> 8), (uint8_t)(xe & 0xFF)};
     sendLcdCmd(0x2A, caset, 4);
 
-    uint16_t ys = y + LCD_ROW_OFFSET;
-    uint16_t ye = y2 + LCD_ROW_OFFSET;
-    uint8_t raset[4] = {(uint8_t)(ys >> 8), (uint8_t)(ys & 0xFF), (uint8_t)(ye >> 8), (uint8_t)(ye & 0xFF)};
-    sendLcdCmd(0x2B, raset, 4);
+    uint16_t maxRowsPerChunk = DMA_CHUNK_PIXELS / w;
+    if (maxRowsPerChunk == 0) maxRowsPerChunk = 1;
 
     uint16_t swapped = (colorRgb565 >> 8) | (colorRgb565 << 8);
-    size_t totalPixels = (size_t)w * (size_t)h;
-    size_t fillCount = (totalPixels < DMA_CHUNK_PIXELS) ? totalPixels : DMA_CHUNK_PIXELS;
-    for (size_t i = 0; i < fillCount; i++) {
+    size_t maxChunkPixels = (size_t)w * (size_t)((h < maxRowsPerChunk) ? h : maxRowsPerChunk);
+    for (size_t i = 0; i < maxChunkPixels; i++) {
         dmaSwapBuffer[i] = swapped;
     }
 
-    size_t sentPixels = 0;
-    bool firstChunk = true;
-    while (sentPixels < totalPixels) {
-        size_t chunk = totalPixels - sentPixels;
-        if (chunk > DMA_CHUNK_PIXELS) chunk = DMA_CHUNK_PIXELS;
+    uint16_t rowsSent = 0;
+    while (rowsSent < h) {
+        uint16_t chunkRows = h - rowsSent;
+        if (chunkRows > maxRowsPerChunk) chunkRows = maxRowsPerChunk;
+
+        uint16_t ys = y + rowsSent + LCD_ROW_OFFSET;
+        uint16_t ye = ys + chunkRows - 1;
+        uint8_t raset[4] = {(uint8_t)(ys >> 8), (uint8_t)(ys & 0xFF), (uint8_t)(ye >> 8), (uint8_t)(ye & 0xFF)};
+        sendLcdCmd(0x2B, raset, 4);
+
+        size_t chunkPixels = (size_t)w * (size_t)chunkRows;
 
         spi_transaction_t t;
         memset(&t, 0, sizeof(t));
         t.flags     = SPI_TRANS_MODE_QIO;
         t.cmd       = LCD_OPCODE_WRITE_COLOR;
-        t.addr      = firstChunk ? 0x002C00 : 0x003C00;
-        t.length    = chunk * 16;
+        t.addr      = 0x002C00;
+        t.length    = chunkPixels * 16;
         t.tx_buffer = dmaSwapBuffer;
 
         spi_device_polling_transmit(lcdSpiHandle, &t);
 
-        sentPixels += chunk;
-        firstChunk = false;
+        rowsSent += chunkRows;
     }
 }
 

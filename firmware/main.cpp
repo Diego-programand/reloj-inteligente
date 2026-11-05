@@ -1,17 +1,15 @@
 /**
  * @file main.cpp
- * @brief Fase 2 (Parte A): Prueba de Pantalla AMOLED QSPI (410x502) y Panel Táctil (FT3168)
+ * @brief Fase 2 Completa: Pantalla AMOLED QSPI + Panel Táctil FT3168 + Motor Gráfico LVGL en PSRAM
  *
- * Qué hace este firmware al arrancar:
+ * Qué hace nuestro sistema al arrancar:
  *   1. Inicializa la energía (AXP2101) en 0x34.
- *   2. Despierta e inicializa el panel táctil (FT3168) en 0x38.
- *   3. Reinicia e inicializa la pantalla AMOLED (CO5300/SH8601) por bus QSPI de 4 carriles.
- *   4. Dibuja en pantalla una interfaz de prueba con bandas de color puro (Rojo, Verde, Azul, Cian)
- *      y un lienzo interactivo:
- *        - Al tocar o arrastrar el dedo sobre el cristal, dibuja un trazo luminoso bajo tu dedo
- *          y envía las coordenadas exactas (X, Y) al PC por COM5.
- *        - Al presionar el botón lateral BOOT, limpia el lienzo y cambia el color de pintura.
- *        - Al presionar el botón lateral PWR, cambia el nivel de brillo (100% -> 35% -> Apagada -> 100%).
+ *   2. Inicializa el panel táctil (FT3168) en 0x38.
+ *   3. Inicializa la pantalla AMOLED (410x502) por bus QSPI de 4 carriles.
+ *   4. Inicia el motor gráfico LVGL reservando doble buffer (~410 KB) en los 8 MB de Octal PSRAM.
+ *   5. Muestra en la pantalla del reloj un centro de control interactivo con 2 pantallas
+ *      deslizables con el dedo (Swipe izquierda/derecha), control táctil de brillo,
+ *      nivel real de batería y monitor de eventos.
  */
 
 #include <Arduino.h>
@@ -20,61 +18,12 @@
 #include "hal/hal_power.h"
 #include "hal/hal_display.h"
 #include "hal/hal_touch.h"
+#include "ui/ui_manager.h"
 
 static uint32_t lastTelemetryMs = 0;
-static uint32_t lastTouchPrintMs = 0;
 static bool lastBootButtonState = HIGH;
-
-// Paleta de colores para probar al presionar el botón BOOT
-static const uint16_t BRUSH_COLORS[] = {
-    COLOR_CYAN,
-    COLOR_GREEN,
-    COLOR_YELLOW,
-    COLOR_ORANGE,
-    COLOR_RED,
-    COLOR_WHITE
-};
-static const char* BRUSH_NAMES[] = {
-    "CIAN",
-    "VERDE",
-    "AMARILLO",
-    "NARANJA",
-    "ROJO",
-    "BLANCO"
-};
-static int currentBrushIndex = 0;
-
-// Niveles de brillo para probar al presionar el botón PWR
-static const uint8_t BRIGHTNESS_LEVELS[] = {255, 90, 20, 0};
+static const uint8_t BRIGHTNESS_LEVELS[] = {255, 140, 45, 0};
 static int currentBrightnessIndex = 0;
-
-/**
- * @brief Dibuja la pantalla base de prueba con franjas de referencia RGB y marco activo.
- */
-void drawTestCanvas() {
-    // 1. Fondo negro puro (en AMOLED los píxeles negros están físicamente apagados)
-    hal_display_fill_screen(COLOR_BLACK);
-
-    // 2. Franjas superiores de prueba de color (Rojo, Verde, Azul, Blanco)
-    uint16_t barW = WATCH_LCD_WIDTH / 4;
-    hal_display_fill_rect(0 * barW, 0, barW, 18, COLOR_RED);
-    hal_display_fill_rect(1 * barW, 0, barW, 18, COLOR_GREEN);
-    hal_display_fill_rect(2 * barW, 0, barW, 18, COLOR_BLUE);
-    hal_display_fill_rect(3 * barW, 0, WATCH_LCD_WIDTH - (3 * barW), 18, COLOR_WHITE);
-
-    // 3. Barra indicadora del color de pincel actual en la parte superior e inferior
-    uint16_t brushColor = BRUSH_COLORS[currentBrushIndex];
-    hal_display_fill_rect(0, 20, WATCH_LCD_WIDTH, 6, brushColor);
-    hal_display_fill_rect(0, WATCH_LCD_HEIGHT - 8, WATCH_LCD_WIDTH, 8, brushColor);
-
-    // 4. Bordes laterales guía para verificar que las 410 columnas x 502 filas están bien centradas
-    hal_display_fill_rect(0, 26, 3, WATCH_LCD_HEIGHT - 34, COLOR_DARKGRAY);
-    hal_display_fill_rect(WATCH_LCD_WIDTH - 3, 26, 3, WATCH_LCD_HEIGHT - 34, COLOR_DARKGRAY);
-
-    // 5. Mira central en (205, 251)
-    hal_display_fill_rect(WATCH_LCD_WIDTH / 2 - 12, WATCH_LCD_HEIGHT / 2 - 1, 25, 3, brushColor);
-    hal_display_fill_rect(WATCH_LCD_WIDTH / 2 - 1, WATCH_LCD_HEIGHT / 2 - 12, 3, 25, brushColor);
-}
 
 const char* identifyI2CChip(uint8_t address) {
     switch (address) {
@@ -107,14 +56,17 @@ void scanI2CBus() {
     Serial.println("============================================================\n");
 }
 
-void printPowerTelemetry() {
+void updateAndPrintPower() {
     WatchPowerStatus st = hal_power_get_status();
+    ui_manager_update_power(st);
+
     Serial.printf(
-        "[ENERGIA] Bateria: %4u mV (%3d%%) | Cargando: %-2s | Brillo LCD: %3u/255\n",
+        "[ENERGIA] Bateria: %4u mV (%3d%%) | Cargando: %-2s | Brillo LCD: %3u/255 | PSRAM libre: %u KB\n",
         st.batteryVoltageMv,
         st.batteryPercent,
         st.isCharging ? "SI" : "NO",
-        hal_display_get_brightness()
+        hal_display_get_brightness(),
+        ESP.getFreePsram() / 1024
     );
 }
 
@@ -125,17 +77,12 @@ void printSystemReport() {
     Serial.printf("  * Procesador (CPU) : %s @ %u MHz (%u nucleos)\n",
                   ESP.getChipModel(), ESP.getCpuFreqMHz(), ESP.getChipCores());
     Serial.printf("  * Memoria Flash    : %u MB\n", ESP.getFlashChipSize() / (1024 * 1024));
-    Serial.printf("  * Memoria PSRAM    : %u KB (~%u MB Octal PSRAM activa)\n",
-                  ESP.getPsramSize() / 1024, ESP.getPsramSize() / (1024 * 1024));
-    Serial.printf("  * Pantalla AMOLED  : %u x %u px (QSPI 4 carriles, Offset X=22)\n",
-                  WATCH_LCD_WIDTH, WATCH_LCD_HEIGHT);
+    Serial.printf("  * Memoria PSRAM    : %u KB total (%u KB libres tras buffers LVGL)\n",
+                  ESP.getPsramSize() / 1024, ESP.getFreePsram() / 1024);
+    Serial.printf("  * Motor Grafico    : LVGL v8.3 activo en 410x502 QSPI\n");
 
     scanI2CBus();
-    printPowerTelemetry();
-    Serial.println("\n>>> CONTROLES ACTIVOS EN TU RELOJ: <<<");
-    Serial.println("  1. Toca o desliza el dedo por la pantalla -> Dibuja en vivo y muestra (X, Y) aqui.");
-    Serial.println("  2. Boton lateral BOOT -> Limpia la pantalla y cambia el color del trazo.");
-    Serial.println("  3. Boton lateral PWR  -> Cambia el nivel de brillo (100% -> 35% -> 8% -> Apagada).\n");
+    updateAndPrintPower();
 }
 
 void setup() {
@@ -143,7 +90,7 @@ void setup() {
     Serial.begin(115200);
 
     uint32_t waitStart = millis();
-    while (!Serial && (millis() - waitStart < 2500)) {
+    while (!Serial && (millis() - waitStart < 2000)) {
         delay(10);
     }
     delay(200);
@@ -151,25 +98,24 @@ void setup() {
     // 1. Iniciar bus I2C compartido
     Wire.begin(WATCH_I2C_SDA_PIN, WATCH_I2C_SCL_PIN, WATCH_I2C_FREQ_HZ);
 
-    // 2. Encender rieles de alimentación del AXP2101 (imprescindible antes de pantalla y táctil)
-    Serial.println("\n[1/3] Inicializando gestor de energia AXP2101 (0x34)...");
+    // 2. Inicializar gestor de energía AXP2101
+    Serial.println("\n[1/4] Inicializando gestor de energia AXP2101 (0x34)...");
     hal_power_init(Wire);
 
-    // 3. Inicializar panel táctil FT3168 (0x38)
-    Serial.println("[2/3] Inicializando panel tactil FT3168 (0x38)...");
-    if (hal_touch_init(Wire)) {
-        Serial.println("  -> [EXITO] Panel tactil FT3168 listo.");
-    } else {
-        Serial.println("  -> [ERROR] Panel tactil FT3168 no respondio.");
-    }
+    // 3. Inicializar panel táctil FT3168
+    Serial.println("[2/4] Inicializando panel tactil FT3168 (0x38)...");
+    hal_touch_init(Wire);
 
-    // 4. Inicializar pantalla AMOLED QSPI (410x502) y dibujar lienzo de prueba
-    Serial.println("[3/3] Inicializando pantalla AMOLED QSPI (410x502)...");
-    if (hal_display_init()) {
-        Serial.println("  -> [EXITO] Pantalla AMOLED QSPI encendida.");
-        drawTestCanvas();
+    // 4. Inicializar pantalla AMOLED QSPI (410x502)
+    Serial.println("[3/4] Inicializando pantalla AMOLED QSPI (410x502)...");
+    hal_display_init();
+
+    // 5. Inicializar motor gráfico LVGL con doble buffer en Octal PSRAM
+    Serial.println("[4/4] Inicializando motor grafico LVGL en Octal PSRAM...");
+    if (ui_manager_init()) {
+        Serial.println("  -> [EXITO] Interfaz LVGL cargada en PSRAM.");
     } else {
-        Serial.println("  -> [ERROR] Fallo al inicializar bus QSPI de pantalla.");
+        Serial.println("  -> [ERROR] No se pudo reservar memoria PSRAM para LVGL.");
     }
 
     printSystemReport();
@@ -177,23 +123,10 @@ void setup() {
 }
 
 void loop() {
-    // A. Leer el panel táctil en tiempo real
-    TouchPoint tp = hal_touch_read();
-    if (tp.touched) {
-        // Dibujar un cuadrado de 12x12 píxeles centrado bajo el dedo
-        uint16_t drawX = (tp.x > 6) ? (tp.x - 6) : 0;
-        uint16_t drawY = (tp.y > 6) ? (tp.y - 6) : 0;
-        hal_display_fill_rect(drawX, drawY, 12, 12, BRUSH_COLORS[currentBrushIndex]);
+    // A. Ejecutar el motor gráfico LVGL (refresco de pantalla, animaciones y gestos táctiles)
+    ui_manager_loop();
 
-        // Imprimir coordenada (X, Y) en el puerto serie hasta 10 veces por segundo para no saturar
-        if (millis() - lastTouchPrintMs >= 100) {
-            lastTouchPrintMs = millis();
-            Serial.printf(">>> [TOUCH] Dedo detectado en X = %3u, Y = %3u (Color: %s)\n",
-                          tp.x, tp.y, BRUSH_NAMES[currentBrushIndex]);
-        }
-    }
-
-    // B. Botón físico BOOT: limpiar lienzo y cambiar color de pincel
+    // B. Detectar botón físico BOOT (GPIO 0)
     bool currentBootState = digitalRead(WATCH_BTN_BOOT_PIN);
     if (currentBootState != lastBootButtonState) {
         delay(20);
@@ -201,25 +134,29 @@ void loop() {
         if (currentBootState != lastBootButtonState) {
             lastBootButtonState = currentBootState;
             if (currentBootState == LOW) {
-                currentBrushIndex = (currentBrushIndex + 1) % 6;
-                drawTestCanvas();
-                Serial.printf(">>> [BOTON BOOT] Lienzo limpio | Nuevo color: %s <<<\n",
-                              BRUSH_NAMES[currentBrushIndex]);
+                Serial.println(">>> [BOTON] Presionado BOOT (GPIO 0) <<<");
+                ui_manager_notify_button("BOOT presionado");
+            } else {
+                ui_manager_notify_button("BOOT soltado");
             }
         }
     }
 
-    // C. Botón físico PWR: cambiar nivel de brillo de la pantalla AMOLED
+    // C. Detectar botón físico PWR (vía AXP2101 I2C)
     PwrButtonEvent pwrEvent = hal_power_poll_button();
     if (pwrEvent == PWR_BTN_SHORT_PRESS) {
         currentBrightnessIndex = (currentBrightnessIndex + 1) % 4;
         uint8_t newBright = BRIGHTNESS_LEVELS[currentBrightnessIndex];
         hal_display_set_brightness(newBright);
-        Serial.printf(">>> [BOTON PWR] Brillo de pantalla ajustado a: %u / 255 (%d%%) <<<\n",
-                      newBright, (newBright * 100) / 255);
+        ui_manager_sync_brightness(newBright);
+        ui_manager_notify_button("PWR (Cambio de brillo)");
+        Serial.printf(">>> [BOTON PWR] Brillo ajustado a %u/255 <<<\n", newBright);
+    } else if (pwrEvent == PWR_BTN_LONG_PRESS) {
+        ui_manager_notify_button("PWR (Pulsacion larga)");
+        Serial.println(">>> [BOTON PWR] Pulsacion larga detectada <<<");
     }
 
-    // D. Comando 'i' desde consola
+    // D. Comando 'i' por consola USB
     if (Serial.available() > 0) {
         char cmd = (char)Serial.read();
         if (cmd == 'i' || cmd == 'I') {
@@ -227,11 +164,11 @@ void loop() {
         }
     }
 
-    // E. Telemetría periódica cada 5 segundos
-    if (millis() - lastTelemetryMs >= 5000) {
+    // E. Actualizar datos de batería en pantalla y consola cada 3 segundos
+    if (millis() - lastTelemetryMs >= 3000) {
         lastTelemetryMs = millis();
-        printPowerTelemetry();
+        updateAndPrintPower();
     }
 
-    delay(10);
+    delay(5);
 }

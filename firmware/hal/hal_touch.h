@@ -32,3 +32,4 @@ bool hal_touch_init(TwoWire &wirePort);
  * @brief Lee si el usuario está tocando la pantalla y en qué coordenadas (X, Y).
  */
 TouchPoint hal_touch_read();
+
