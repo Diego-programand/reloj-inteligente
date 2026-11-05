@@ -13,6 +13,10 @@
   2. **Tono adulto, claro y técnico-accesible:** No hables de forma infantil ni condescendiente ("como para niños"), pero sí como un **ingeniero mentor** que le explica a un colega inteligente que es nuevo en hardware.
   3. **Analogías funcionales cuando ayuden:** Explica el rol de cada pieza (ej. *"el chip `AXP2101` es como el cuadro eléctrico del reloj: decide a qué piezas les llega corriente y mide cuánta batería queda"*).
   4. **Paso a paso transparente:** Antes y después de ejecutar comandos o escribir código, explica **qué estamos haciendo**, **por qué es necesario** y **qué efecto real tendrá en el reloj físico**.
+* **Preferencia Estética de Interfaz (UI/UX):**
+  * **Estilo formal, minimalista y exclusivo:** Usar siempre **tonos neutros y monocromáticos** (negro puro `#000000` para fundirse con el bisel AMOLED, blanco alabastro `#F4F4F5`, plata cepillada `#A1A1AA` y grafito/titanio `#71717A` / `#27272A`).
+  * **Prohibido el estilo infantil o recargado:** Evitar colores neón/estridentes, tarjetas innecesarias (*cards*) en la esfera principal o animaciones que consuman recursos cada segundo sin necesidad.
+  * **Cuidado con el *padding* de LVGL:** Siempre aplicar `lv_obj_set_style_pad_all(obj, 0, 0)` en contenedores para evitar que el relleno automático del tema (`DPI=130`) provoque que los títulos y contenidos se sobrepongan.
 
 ---
 

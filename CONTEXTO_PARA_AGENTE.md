@@ -43,10 +43,24 @@ El usuario compró un reloj de desarrollo **ESP32-S3-Touch-AMOLED-2.06** (distri
 4. **Preservar Comunicación USB (`COM5`):**
    * El reloj se conecta directamente por los pines USB nativos del ESP32-S3 (`GPIO 19` D-, `GPIO 20` D+) usando el periférico interno `USB-Serial/JTAG`.
    * Siempre compilar con `ARDUINO_USB_CDC_ON_BOOT=1` y `ARDUINO_USB_MODE=1` (Hardware CDC and JTAG) para que el puerto `COM5` siga activo mientras corre nuestro firmware.
+5. **Peculiaridades críticas del display AMOLED `CO5300` ($410 \times 502$) y Táctil `FT3168`:**
+   * **Offset horizontal de 22 píxeles (`LCD_COL_OFFSET = 0x16`):** Extraído de la tabla original de fábrica (`0x2720C4`). Toda ventana horizontal suma `0x16` a `xs` y `xe`.
+   * **Alineación par obligatoria (`lvgl_rounder_cb`):** El controlador `CO5300` exige que toda ventana parcial (`CASET`/`RASET`) inicie en coordenada par (`x1, y1 & ~1`) y termine en impar (`x2, y2 | 1`, ancho y alto pares). Sin esto, las actualizaciones parciales de LVGL se rasgan en diagonal.
+   * **Ventana vertical por tira DMA:** En `hal_display.cpp`, cada tira DMA de 30 líneas debe enviar explícitamente `0x2B` (`RASET`) y `0x2C` (`RAMWR`) porque al soltar `CS` (`GPIO 12`) el `CO5300` reinicia el puntero de fila.
+   * **Lectura táctil sin errores I2C:** Solo leer `0x38` (`FT3168`) cuando `digitalRead(WATCH_TP_INT_PIN) == LOW` (`GPIO 38`).
 
 ---
 
-## 4. Protocolo de Trabajo en cada Sesión
+## 4. Estado Actual del Proyecto (Resumen de Fases)
+* **Fase 0 (Completada):** Backup íntegro de 32 MB (`backups/factory_backup_32MB.bin`, SHA256 verificado) subido a GitHub.
+* **Fase 1 (Completada):** Entorno PlatformIO (`platformio.ini`), driver `hal_power` (`AXP2101` en `0x34`), despertar de periféricos y escáner I2C de los 6 chips.
+* **Fase 2 (Completada):** Driver QSPI a 80 MHz con DMA (`hal_display`), driver táctil (`hal_touch`) y motor gráfico `LVGL v8.4.0` con doble buffer en Octal PSRAM (`ui_manager`).
+* **Fase 3 (Completada):** Driver RTC `PCF85063` (`hal_rtc`), servicio `time_sync` y primera `scr_watchface` con estética minimalista, formal y exclusiva en tonos neutros (solo hora y fecha sobre negro puro `#000000`, sin cards ni segundero).
+* **Próximo paso al retomar en casa:** **Fase 4: Movimiento (`QMI8658`), Cuenta Pasos y Ahorro de Batería** (encendido automático de pantalla al levantar la muñeca y apagado por inactividad).
+
+---
+
+## 5. Protocolo de Trabajo en cada Sesión
 
 Cada vez que hagamos un cambio en el proyecto, sigue este ciclo:
 1. **Consultar:** Revisar [`docs/06-roadmap-y-fases.md`](file:///G:/ITM/reloj-inteligente/docs/06-roadmap-y-fases.md) y [`logs/BITACORA_TECNICA.md`](file:///G:/ITM/reloj-inteligente/logs/BITACORA_TECNICA.md) para ver en qué fase estamos.
