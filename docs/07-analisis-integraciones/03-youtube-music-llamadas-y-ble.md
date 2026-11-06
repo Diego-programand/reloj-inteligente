@@ -150,3 +150,4 @@ void hal_ble_setup() {
 * **Aplicación Móvil Chronos:** [Chronos en Google Play Store](https://play.google.com/store/apps/details?id=com.fbiego.chronos).
 * **Pila NimBLE para ESP32:** [h2zero/NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino) (la implementación BLE más eficiente y rápida para microcontroladores Espressif).
 * **Librería BLE HID alternativa (sin app):** [T-vK/ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard).
+

@@ -119,3 +119,4 @@ Cuando grabas una nota de voz sin internet:
 
 * **Librería ESP32-audioI2S:** [schreibfaul1/ESP32-audioI2S en GitHub](https://github.com/schreibfaul1/ESP32-audioI2S).
 * **Documentación Oficial Espressif SDMMC:** [ESP-IDF SDMMC Host Driver Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/sdmmc_host.html).
+

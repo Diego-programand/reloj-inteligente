@@ -167,3 +167,4 @@ void hal_audio_init() {
 * **Librería de Audio para ESP32:** `pschatzmann/arduino-audio-tools` (potente conjunto de herramientas para manipulación de streams I2S y codificación en ESP32).
 * **Telegram Bot API Reference:** [Telegram Bots Voice & Audio Methods](https://core.telegram.org/bots/api#sendvoice).
 * **Google Gemini API Documentation:** [Gemini REST API Multimodal Audio Guide](https://ai.google.dev/docs).
+

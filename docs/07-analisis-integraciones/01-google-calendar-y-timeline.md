@@ -174,3 +174,4 @@ Google Apps Script responde siempre con una redirección HTTP 302 a `script.goog
 * **`bblanchon/ArduinoJson` (v6.21.3 o v7):** Estándar de la industria en microcontroladores. Ultrarrápida y permite alocar memoria en la Octal PSRAM sin fragmentar la SRAM interna.
 * **`WiFiClientSecure` + `HTTPClient`:** Componentes nativos de ESP-IDF / Arduino ESP32.
 * **Google Apps Script Documentation:** [Google Developers Calendar Service](https://developers.google.com/apps-script/reference/calendar).
+

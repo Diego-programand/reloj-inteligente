@@ -106,3 +106,4 @@ Para consultar el análisis exhaustivo con diagramas de flujo, esquemas de conex
 2. [`docs/07-analisis-integraciones/02-agente-ia-telegram-y-voz.md`](file:///G:/ITM/reloj-inteligente/docs/07-analisis-integraciones/02-agente-ia-telegram-y-voz.md)
 3. [`docs/07-analisis-integraciones/03-youtube-music-llamadas-y-ble.md`](file:///G:/ITM/reloj-inteligente/docs/07-analisis-integraciones/03-youtube-music-llamadas-y-ble.md)
 4. [`docs/07-analisis-integraciones/04-audio-offline-y-microsd.md`](file:///G:/ITM/reloj-inteligente/docs/07-analisis-integraciones/04-audio-offline-y-microsd.md)
+
