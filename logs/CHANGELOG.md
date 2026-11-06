@@ -6,6 +6,19 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
+## [0.7.0] - 2026-11-06 — Análisis Profundo y Especificación Técnica de Integraciones Inteligentes
+
+### Añadido (Added)
+* Carpeta documental `docs/07-analisis-integraciones/` con 5 especificaciones modulares:
+  * `00-resumen-ejecutivo-y-preferencias.md`: Síntesis humana en 3 minutos con cuestionario interactivo de casillas `[ ]` para selección de opciones y prioridades por el usuario.
+  * `01-google-calendar-y-timeline.md`: Arquitectura de sincronización con Google Calendar mediante puente Google Apps Script Webhook (JSON ligero < 500 bytes, sincronización en 2.2 s por Wi-Fi sin sobrecarga de OAuth 2.0) y visualización de línea de tiempo ejecutiva.
+  * `02-agente-ia-telegram-y-voz.md`: Integración del subsistema de audio digital (`ES7210` micrófonos duales + `ES8311` altavoz amplificado) vía I2S en búferes de Octal PSRAM para modo Walkie-Talkie con agentes de Telegram y Google Gemini.
+  * `03-youtube-music-llamadas-y-ble.md`: Control multimedia de YouTube Music, identificador de llamadas entrantes con botón de silenciar y notificaciones telefónicas vía Bluetooth BLE (utilizando la app libre `Chronos` y pila NimBLE).
+  * `04-audio-offline-y-microsd.md`: Reproductor de MP3/podcasts local autónomo vía SDMMC 1-bit (`GPIO 1, 2, 3`) con `ESP32-audioI2S` y grabadora de notas de voz offline directa a MicroSD.
+* Actualización de `docs/06-roadmap-y-fases.md` vinculando el análisis de la Fase 6.
+
+---
+
 ## [0.6.0] - 2026-11-06 — Fase 4 y Simplificación de Ajustes: Tap-to-Wake por Interrupción, Formato 12H Fijo y Ajustes de Brillo/Volumen/Batería
 
 ### Añadido (Added)

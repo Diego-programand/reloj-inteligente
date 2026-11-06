@@ -143,6 +143,30 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #008 — 2026-11-06: Análisis Profundo de Integraciones Inteligentes (Google Calendar, Telegram IA, YouTube Music y MicroSD)
+
+* **Fase del Roadmap:** Fase 6 (Planificación y Especificación de Integraciones)
+* **Archivos Modificados:**
+  * `docs/07-analisis-integraciones/00-resumen-ejecutivo-y-preferencias.md`
+  * `docs/07-analisis-integraciones/01-google-calendar-y-timeline.md`
+  * `docs/07-analisis-integraciones/02-agente-ia-telegram-y-voz.md`
+  * `docs/07-analisis-integraciones/03-youtube-music-llamadas-y-ble.md`
+  * `docs/07-analisis-integraciones/04-audio-offline-y-microsd.md`
+  * `docs/06-roadmap-y-fases.md`
+* **Qué se hizo:**
+  1. Se completó un estudio de viabilidad técnica y búsqueda de librerías de código abierto para las 4 áreas deseadas por el usuario:
+     * **Google Calendar:** Diseño de puente ligero con Google Apps Script (JSON de ~450 bytes) sin sobrecarga de OAuth 2.0 en el reloj, sincronización en 2.2 s por Wi-Fi y timeline minimalista en LVGL.
+     * **Agente IA en Telegram con Voz:** Integración del códec `ES8311` y los micrófonos digitales `ES7210` sobre I2S con 8 MB de Octal PSRAM para modo Walkie-Talkie, dictado de notas y respuestas de voz/texto con Google Gemini.
+     * **YouTube Music, Llamadas y Notificaciones:** Evaluación de modos BLE. Selección de la app de código abierto `Chronos` (`fbiego/chronos-esp32` con NimBLE) para metadatos de canciones en vivo, control multimedia, visualización de llamada entrante con silenciador y notificaciones de Telegram/WhatsApp.
+     * **Audio Offline en MicroSD:** Aprovechamiento del controlador hardware SDMMC de 1 bit (`GPIO 1, 2, 3`) con `ESP32-audioI2S` para reproducción local de MP3/podcasts y grabadora de notas de voz offline.
+  2. Se redactó un cuestionario de preferencias humanas con casillas `[ ]` en `docs/07-analisis-integraciones/00-resumen-ejecutivo-y-preferencias.md` para que el usuario defina sus gustos sin sobrecarga de lectura técnica.
+* **Resultado / Verificación:**
+  * Documentación completa, modular y estructurada para futuros agentes de IA e implementación paso a paso.
+* **Cómo Revertir (Rollback):**
+  * `git checkout HEAD~1` para retirar la carpeta de análisis.
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown

@@ -69,10 +69,14 @@ Para avanzar con velocidad y **cero errores acumulados**, construiremos el reloj
 
 ---
 
-## Fase 6: Funciones Inteligentes Avanzadas (A Elección)
+## Fase 6: Funciones Inteligentes Avanzadas (A Elección y Gusto del Usuario)
 
-- **Opciones personalizables según lo que quieras agregar:**
-  - **Clima en vivo:** Consulta rápida a API meteorológica (Open-Meteo sin necesidad de API Key) al sincronizar por Wi-Fi.
-  - **Notificaciones del Teléfono (BLE):** Recibir notificaciones de tu móvil por Bluetooth Low Energy.
-  - **Asistente de Voz IA a medida:** Aprovechar los 2 micrófonos (`ES7210`) y el altavoz (`ES8311`) para enviar comandos de voz o notas cuando tú lo decidas.
-  - **Reproductor / Galería en MicroSD:** Leer archivos desde la ranura TF (`GPIO 1, 2, 3`).
+> [!NOTE]
+> Para el diseño profundo de arquitectura, librerías, cuestionario de preferencias y esquemas de conexión de esta fase, consulta la carpeta:
+> [`docs/07-analisis-integraciones/`](file:///G:/ITM/reloj-inteligente/docs/07-analisis-integraciones/00-resumen-ejecutivo-y-preferencias.md)
+
+- **Opciones analizadas y listas para implementar según las respuestas del usuario:**
+  - **Pilar 1: Google Calendar & Timeline Ejecutivo:** Sincronización ligera vía Google Apps Script Webhook, próximo evento en watchface y alertas contextuales previa reunión. *(Ver `docs/07-analisis-integraciones/01-google-calendar-y-timeline.md`)*.
+  - **Pilar 2: Agente de IA y Telegram en la Muñeca:** Micrófonos `ES7210` y altavoz `ES8311` con pulsador lateral para dictar notas, hacer preguntas a Google Gemini y recibir respuestas de texto/audio. *(Ver `docs/07-analisis-integraciones/02-agente-ia-telegram-y-voz.md`)*.
+  - **Pilar 3: YouTube Music, Llamadas y Notificaciones (BLE):** Integración con la app de código abierto `Chronos` (pila NimBLE) para metadatos de canciones, botones multimedia, identificador de llamadas con opción de silenciar/colgar y notificaciones de Telegram/WhatsApp. *(Ver `docs/07-analisis-integraciones/03-youtube-music-llamadas-y-ble.md`)*.
+  - **Pilar 4: Audio Offline y Tarjeta MicroSD:** Reproductor de música MP3/podcasts local directo al altavoz y grabadora de voz autónoma sin conexión a internet. *(Ver `docs/07-analisis-integraciones/04-audio-offline-y-microsd.md`)*.
