@@ -12,7 +12,9 @@
 #include "hal/hal_rtc.h"
 #include "ui/screens/scr_watchface.h"
 
-#define LVGL_BUFFER_LINES       (WATCH_LCD_HEIGHT / 2)
+// Buffer de PANTALLA COMPLETA (502 líneas completas en Octal PSRAM)
+// Elimina de raíz el quiebre horizontal en la mitad de la pantalla (línea 251) al deslizar.
+#define LVGL_BUFFER_LINES       WATCH_LCD_HEIGHT
 #define LVGL_BUFFER_PIXELS      (WATCH_LCD_WIDTH * LVGL_BUFFER_LINES)
 
 static lv_disp_draw_buf_t drawBuf;

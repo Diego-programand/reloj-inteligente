@@ -16,8 +16,8 @@
 /* Profundidad de color: 16 bits por píxel (RGB565) */
 #define LV_COLOR_DEPTH 16
 
-/* No invertir bytes en LVGL porque hal_display_push_colors ya lo hace por hardware/DMA */
-#define LV_COLOR_16_SWAP 0
+/* Invertir los 2 bytes de RGB565 directamente en LVGL para copiar por DMA con memcpy directo */
+#define LV_COLOR_16_SWAP 1
 
 /*====================
    MEMORIA Y RENDIMIENTO

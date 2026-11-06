@@ -172,4 +172,3 @@ const lv_font_t font_watch_time_108 = {{
 """)
 
 print(f"Generada font_watch_time_108: {len(bitmap_bytes)} bytes, line_height={line_height}")
-

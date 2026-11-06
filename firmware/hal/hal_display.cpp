@@ -15,14 +15,15 @@
 #define LCD_OPCODE_WRITE_CMD        0x02
 #define LCD_OPCODE_WRITE_COLOR      0x32
 
-// Tamaño del bloque intermedio en memoria DMA (30 líneas: 410 * 30 * 2 = 24,600 bytes < límite DMA de 32 KB)
-#define DMA_CHUNK_LINES             30
+// Tamaño del bloque intermedio en memoria DMA (38 líneas: 410 * 38 * 2 = 31,160 bytes < límite hardware DMA de 32,768 bytes)
+#define DMA_CHUNK_LINES             38
 #define DMA_CHUNK_PIXELS            (WATCH_LCD_WIDTH * DMA_CHUNK_LINES)
 
 static spi_device_handle_t lcdSpiHandle = nullptr;
 static uint16_t *dmaSwapBuffer = nullptr;
 static uint8_t currentBrightness = 220;
 static bool displayPowerOn = true;
+static bool tePinActive = false;
 
 /**
  * @brief Envía un comando de control al chip de la pantalla (por 1 línea de datos).
@@ -128,6 +129,19 @@ bool hal_display_init() {
     hal_display_fill_screen(COLOR_BLACK);
     hal_display_set_brightness(initialBrightness);
 
+    // Detectar automáticamente si el pin físico TE (GPIO 13) emite pulsos de sincronización vertical (60 Hz)
+    bool sawLow = false, sawHigh = false;
+    uint32_t t0 = millis();
+    while (millis() - t0 < 25) {
+        if (digitalRead(WATCH_LCD_TE_EN_PIN) == LOW)  sawLow = true;
+        else                                          sawHigh = true;
+        if (sawLow && sawHigh) {
+            tePinActive = true;
+            break;
+        }
+    }
+    Serial.printf("  -> Sincronizacion V-Sync (Pin TE GPIO 13): %s\n", tePinActive ? "ACTIVA (60Hz)" : "Por Software");
+
     return true;
 }
 
@@ -169,6 +183,15 @@ void hal_display_push_colors(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
     uint16_t w = x2 - x1 + 1;
     uint16_t h = y2 - y1 + 1;
 
+    // Si estamos refrescando gran parte de la pantalla (ej. al deslizar entre pantallas)
+    // y el pin TE (GPIO 13) está activo, esperamos el inicio del pulso vertical (V-Sync)
+    // para que el barrido de la pantalla nunca se cruce con nuestra transferencia QSPI.
+    if (tePinActive && h >= 180) {
+        uint32_t tWait = micros();
+        while (digitalRead(WATCH_LCD_TE_EN_PIN) == HIGH && (micros() - tWait < 4000)) {}
+        while (digitalRead(WATCH_LCD_TE_EN_PIN) == LOW  && (micros() - tWait < 18000)) {}
+    }
+
     // 1. Definir ventana horizontal sumando el offset físico de 22 columnas (0x16)
     uint16_t xs = x1 + LCD_COL_OFFSET;
     uint16_t xe = x2 + LCD_COL_OFFSET;
@@ -183,8 +206,6 @@ void hal_display_push_colors(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
     if (maxRowsPerChunk == 0) maxRowsPerChunk = 2;
 
     // 3. Enviar franja por franja actualizando la ventana vertical (0x2B) y usando 0x2C (RAMWR)
-    //    Nota técnica: En el chip CO5300, al levantar CS al final de cada transacción QSPI,
-    //    cada nuevo bloque debe indicar su fila inicial en 0x2B y escribir con 0x002C00.
     uint16_t rowsSent = 0;
     while (rowsSent < h) {
         uint16_t chunkRows = h - rowsSent;
@@ -203,10 +224,9 @@ void hal_display_push_colors(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
         size_t chunkPixels = (size_t)w * (size_t)chunkRows;
         size_t offsetPixels = (size_t)rowsSent * (size_t)w;
 
-        for (size_t i = 0; i < chunkPixels; i++) {
-            uint16_t c = colorData[offsetPixels + i];
-            dmaSwapBuffer[i] = (c >> 8) | (c << 8);
-        }
+        // LV_COLOR_16_SWAP=1 ya entrega los bytes en orden big-endian para el CO5300,
+        // así que usamos memcpy directo de alta velocidad hacia el buffer DMA interno.
+        memcpy(dmaSwapBuffer, &colorData[offsetPixels], chunkPixels * sizeof(uint16_t));
 
         spi_transaction_t t;
         memset(&t, 0, sizeof(t));

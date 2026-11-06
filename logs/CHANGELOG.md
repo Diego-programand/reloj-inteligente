@@ -14,6 +14,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 * Fuente tipográfica a medida **`font_watch_time_108`** (`108 pt`, 4-bpp anti-aliased tabular, generada con `scripts/generate_watch_font.py` en `firmware/ui/fonts/font_watch_time_108.*`) para aprovechar la alta densidad de píxeles del panel AMOLED ($410 \times 502$).
 * Esfera de reloj personalizada `scr_watchface` (`firmware/ui/screens/scr_watchface.h` y `firmware/ui/screens/scr_watchface.cpp`): Diseño minimalista formal y exclusivo sobre negro puro AMOLED (`#000000`), sin tarjetas ni colores estridentes, mostrando hora gigante (`108 pt`) en formato **12H con `AM`/`PM` (`28 pt`)** y fecha/día (`24 pt`) en tonos neutros de titanio y plata, con redibujado únicamente 1 vez por minuto.
 * Encendido y apagado directo de pantalla (`Sleep IN` / `Sleep OUT` en `CO5300` + bloqueo táctil en reposo) con 1 toque del botón lateral `PWR`.
+* Doble *buffer* de **pantalla completa (`410 × 502` líneas)** en Octal PSRAM (`ui_manager.cpp`), `LV_COLOR_16_SWAP = 1` (`lv_conf.h`) con `memcpy` DMA directo y sincronización vertical `V-Sync` en el pin `TE` (`GPIO 13`) para eliminar el quiebre a mitad de pantalla durante las transiciones deslizables.
 * Panel de ajustes secundario (`ui_manager.cpp`) unificado en paleta monocromática sobria con controles de brillo, ajuste de hora (`+1 Hora`, `+1 Min`, `-1 Min`) y estado de batería.
 * Parámetro `-SyncTime` en `scripts/monitor_serial.ps1` para sincronizar automáticamente la hora de Windows al reloj por `COM5`.
 
