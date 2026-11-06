@@ -221,7 +221,7 @@ static void build_ui() {
     lblButtonEvent = lv_label_create(cardBatt);
     lv_obj_set_style_text_font(lblButtonEvent, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(lblButtonEvent, lv_color_hex(0x71717A), 0);
-    lv_label_set_text(lblButtonEvent, "Gesto muneca: Activo (15s)");
+    lv_label_set_text(lblButtonEvent, "Tap-to-Wake: Activo (20s)");
     lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 22, 92);
 }
 
