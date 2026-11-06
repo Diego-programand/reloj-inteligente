@@ -1,11 +1,11 @@
 /**
  * @file ui_manager.h
- * @brief Gestor del motor gráfico LVGL (con buffers en los 8 MB de Octal PSRAM).
+ * @brief Gestor del motor gráfico LVGL (con buffers de pantalla completa en los 8 MB de Octal PSRAM).
  *
- * ESTRUCTURA DE PANTALLAS (FASE 3):
- * - Pantalla 1 (Principal): Watchface personalizada (scr_watchface) conectada al chip RTC PCF85063.
- * - Pantalla 2 (Al deslizar a la izquierda): Centro de Control Rápido (Brillo AMOLED,
- *   botones táctiles para ajustar +1 Hora / +1 Minuto / Seg=00 en el chip RTC, y telemetría).
+ * ESTRUCTURA DE PANTALLAS:
+ * - Pantalla 1 (Principal): Watchface minimalista (scr_watchface) en formato 12H con fecha.
+ * - Pantalla 2 (Al deslizar a la izquierda): Panel de Ajustes simplificado
+ *   (Control de Brillo, Control de Volumen y Vista de Batería).
  */
 
 #pragma once
@@ -20,3 +20,4 @@ void ui_manager_update_time(const WatchDateTime &dt);
 void ui_manager_update_power(const WatchPowerStatus &status);
 void ui_manager_notify_button(const char *buttonText);
 void ui_manager_sync_brightness(uint8_t brightness);
+uint8_t ui_manager_get_volume();

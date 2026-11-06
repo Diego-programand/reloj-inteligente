@@ -121,23 +121,23 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
-## Entrada #007 — 2026-11-06: Fase 4 Completada — Sensor de Movimiento (`QMI8658`), Gesto de Muñeca y Ahorro Inteligente de Pantalla
+## Entrada #007 — 2026-11-06: Fase 4 y Simplificación de Ajustes — Tap-to-Wake por Interrupción (`GPIO 38`), Formato 12H Fijo y Panel Brillo/Volumen/Batería
 
-* **Fase del Roadmap:** Fase 4 (Completada)
-* **Archivos Modificados:** `firmware/hal/hal_imu.h`, `firmware/hal/hal_imu.cpp`, `firmware/services/power_manager.h`, `firmware/services/power_manager.cpp`, `firmware/ui/ui_manager.cpp`, `firmware/main.cpp`, `docs/06-roadmap-y-fases.md`
+* **Fase del Roadmap:** Fase 4 / Fase 5 (UI y Energía de Pantalla)
+* **Archivos Modificados:** `firmware/hal/hal_touch.cpp`, `firmware/hal/hal_display.cpp`, `firmware/services/power_manager.h`, `firmware/services/power_manager.cpp`, `firmware/ui/screens/scr_watchface.cpp`, `firmware/ui/ui_manager.h`, `firmware/ui/ui_manager.cpp`, `firmware/main.cpp`
 * **Qué se hizo:**
-  1. **Driver directo `hal_imu` para la IMU de 6 ejes `QMI8658` (`0x6B`):**
-     * Verificación de identidad (`WHO_AM_I = 0x05`), reset por software (`0x60 = 0xB0`), activación de auto-incremento I2C (`CTRL1 = 0x40`), acelerómetro 3D en escala `±4g @ 125 Hz` (`CTRL2 = 0x16`), giroscopio 3D en escala `±512 dps @ 125 Hz` (`CTRL3 = 0x56`) y filtros digitales paso-bajo (`CTRL5 = 0x11`).
-     * **Hallazgo de orientación física del chip en el PCB:** El chip `QMI8658` está soldado en la cara inferior de la placa, por lo que con la pantalla mirando hacia el cielo su eje `Z` crudo mide `-0.93g`. Se invirtió el signo en `hal_imu_read()` (`d.accelZ = -azRaw / 8192.0f`) para que `+1.0g` corresponda siempre a "pantalla mirando hacia arriba".
-  2. **Detección de gesto de muñeca y toque en pantalla (sin contador de pasos, por preferencia de diseño minimalista):**
-     * **Filtro exponencial de línea base (`baselineAx/Ay/Az`):** En lugar de comparar diferencias bruscas entre muestras consecutivas de 40 ms (que exigían sacudir el reloj), se compara la inclinación actual contra un promedio lento de reposo (`tiltDelta >= 0.14g` o `gyroTotal >= 14 dps`), logrando que cualquier giro suave de muñeca o levantamiento desde la mesa encienda la pantalla al instante.
-     * **Tap-to-Wake (Toque para despertar):** Cuando la pantalla está apagada, tocar el cristal (`FT3168`) también despierta inmediatamente la pantalla.
-     * **Apagado al voltear el reloj (`WRIST_GESTURE_LOWER_ARM`):** Detecta cuando la pantalla apunta hacia abajo (`accelZ < -0.30g` sostenido por 500 ms).
-  3. **Gestor de energía de pantalla (`power_manager`):**
-     * Apaga el panel AMOLED (`0x28` Display OFF + `0x10` Sleep IN) tras **15 segundos** sin tocar la pantalla o al bajar el brazo (respetando un margen de 4 s tras cualquier toque táctil).
-     * Despierta instantáneamente la pantalla al levantar la muñeca o pulsar el botón `PWR`, actualizando primero el buffer de hora en PSRAM para que la pantalla encienda directamente con el minuto actual.
+  1. **Activación por toque al primer intento (*Tap-to-Wake* con interrupción en `GPIO 38`):**
+     * Se configuró `attachInterrupt(..., FALLING)` en el pin `WATCH_TP_INT_PIN` (`GPIO 38`) dentro de `hal_touch.cpp` para capturar en hardware cualquier toque breve sobre el cristal `FT3168`, despertando la pantalla en el primer toque sin necesidad de pulsar dos veces.
+     * Se desacopló el encendido por movimiento del `QMI8658` por decisión del usuario, dejando únicamente el encendido por toque en pantalla y botón `PWR`, más el apagado automático tras 20 segundos de inactividad.
+  2. **Corrección de pantalla blanca al despertar (`hal_display.cpp`):**
+     * Se eliminó el comando `0x10` (`Sleep IN`) / `0x11` (`Sleep OUT`) en `hal_display_set_power()`, ya que al despertar rápidamente desconfiguraba la bomba de carga interna del controlador `CO5300` dejando el panel en blanco. Ahora se apaga la matriz AMOLED con brillo `0` (`0x51`) + `Display OFF` (`0x28`) y se restaura con `Display ON` (`0x29`).
+  3. **Formato exclusivo de 12 horas (`scr_watchface.cpp`):**
+     * Se eliminó el evento de clic que alternaba al formato de 24 horas (hora militar), dejando fijo el formato de 12 horas con indicador `AM`/`PM`.
+  4. **Simplificación de la pantalla de Ajustes (`ui_manager.cpp`):**
+     * Se eliminaron los botones de ajuste manual de hora y los datos técnicos (`mV`, estado USB).
+     * Se dejaron únicamente tres bloques minimalistas y simétricos: **Brillo** (`%` y control deslizante), **Volumen** (`%` y control deslizante conectado al registro `0x32` del DAC `ES8311` en `0x18`) y **Batería** (`%` y barra de carga).
 * **Resultado / Verificación en COM5:**
-  * Inicialización confirmada: `[EXITO] Sensor QMI8658 activo (Acelerometro 3D + Giroscopio 3D)` y telemetría en vivo de inclinación (`IMU Z`) y velocidad angular (`Giro dps`).
+  * Compilación limpia (`RAM: 6.6%`, `Flash: 19.1%`) y carga verificada en `COM5`.
 * **Cómo Revertir (Rollback):**
   * `git checkout c6d24f4` para volver al cierre de la Fase 3.
 

@@ -6,11 +6,18 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
-## [0.6.0] - 2026-11-06 — Fase 4 Completada: Sensor de Movimiento (`QMI8658`), Gesto de Muñeca y Ahorro de Energía
+## [0.6.0] - 2026-11-06 — Fase 4 y Simplificación de Ajustes: Tap-to-Wake por Interrupción, Formato 12H Fijo y Ajustes de Brillo/Volumen/Batería
 
 ### Añadido (Added)
-* Módulo `hal_imu` (`firmware/hal/hal_imu.h` y `firmware/hal/hal_imu.cpp`): Driver I2C para el acelerómetro y giroscopio de 6 ejes `QMI8658` (`0x6B`) con filtro paso-bajo y detector de gestos de muñeca (*Wake-on-Wrist-Raise* y *Sleep-on-Wrist-Drop*).
-* Módulo `power_manager` (`firmware/services/power_manager.h` y `firmware/services/power_manager.cpp`): Máquina de estados que apaga automáticamente la pantalla AMOLED tras 20 segundos de inactividad o al voltear el reloj hacia abajo, y la despierta al instante al levantar/inclinar suavemente el reloj, al **tocar la pantalla (*Tap-to-Wake*)** o al presionar el botón `PWR`.
+* Módulo `power_manager` (`firmware/services/power_manager.h` y `firmware/services/power_manager.cpp`): Gestión de encendido de pantalla por **toque en cristal (*Tap-to-Wake*)** y **botón `PWR`**, con apagado automático tras 20 segundos de inactividad.
+* Captura por interrupción de hardware (`FALLING`) en `GPIO 38` (`firmware/hal/hal_touch.cpp`) para garantizar que el primer toque en la pantalla apagada siempre despierte el reloj sin perder pulsos cortos.
+* Control de **Volumen (`0%`–`100%`)** en el panel de Ajustes (`firmware/ui/ui_manager.cpp`) conectado por I2C al registro de volumen digital (`0x32`) del chip DAC de audio `ES8311` (`0x18`).
+* Módulo `hal_imu` (`firmware/hal/hal_imu.h` y `firmware/hal/hal_imu.cpp`): Driver I2C disponible para el sensor `QMI8658` (`0x6B`) (desacoplado del encendido de pantalla por preferencia del usuario).
+
+### Cambiado (Changed)
+* **Formato exclusivo de 12 horas (`AM` / `PM`)** en `scr_watchface.cpp`: Se eliminó el cambio a formato militar (24 horas) al tocar la pantalla.
+* **Simplificación del panel de Ajustes (`ui_manager.cpp`):** Ahora muestra exclusivamente 3 tarjetas limpias en estética monocromática: **Brillo (`%` + slider)**, **Volumen (`%` + slider)** y **Batería (`%` + barra)**, eliminando el ajuste manual de hora y los textos técnicos de milivoltios.
+* **Apagado limpio de matriz AMOLED (`hal_display.cpp`):** Uso de `0x28`/`0x29` + brillo `0` sin `Sleep IN/OUT` (`0x10`/`0x11`) para evitar pantallas blancas al despertar rápido.
 
 ---
 

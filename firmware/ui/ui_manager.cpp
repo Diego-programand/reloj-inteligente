@@ -1,11 +1,12 @@
 /**
  * @file ui_manager.cpp
- * @brief Implementación de LVGL con Watchface Principal (Pantalla 1) y Centro de Control (Pantalla 2).
+ * @brief Implementación de LVGL con Watchface Principal (Pantalla 1) y Ajustes Simplificados (Pantalla 2).
  */
 
 #include "ui_manager.h"
 #include <lvgl.h>
 #include <esp_heap_caps.h>
+#include <Wire.h>
 #include "config/pins_config.h"
 #include "hal/hal_display.h"
 #include "hal/hal_touch.h"
@@ -14,7 +15,7 @@
 #include "ui/screens/scr_watchface.h"
 
 // Buffer de PANTALLA COMPLETA (502 líneas completas en Octal PSRAM)
-// Elimina de raíz el quiebre horizontal en la mitad de la pantalla (línea 251) al deslizar.
+// Elimina de raíz cualquier quiebre horizontal al deslizar entre pantallas.
 #define LVGL_BUFFER_LINES       WATCH_LCD_HEIGHT
 #define LVGL_BUFFER_PIXELS      (WATCH_LCD_WIDTH * LVGL_BUFFER_LINES)
 
@@ -22,13 +23,31 @@ static lv_disp_draw_buf_t drawBuf;
 static lv_color_t *buf1 = nullptr;
 static lv_color_t *buf2 = nullptr;
 
-// Elementos del Centro de Control (Pantalla 2)
-static lv_obj_t *lblBatteryInfo  = nullptr;
-static lv_obj_t *barBattery      = nullptr;
-static lv_obj_t *sliderBright    = nullptr;
-static lv_obj_t *lblBrightVal    = nullptr;
-static lv_obj_t *lblButtonEvent  = nullptr;
+// Elementos del Panel de Ajustes (Pantalla 2): Brillo, Volumen y Batería
+static lv_obj_t *sliderBright   = nullptr;
+static lv_obj_t *lblBrightPct   = nullptr;
+static lv_obj_t *sliderVolume   = nullptr;
+static lv_obj_t *lblVolumePct   = nullptr;
+static lv_obj_t *lblBattPct     = nullptr;
+static lv_obj_t *barBattery     = nullptr;
+
+static uint8_t currentVolumePct = 70;
 static WatchPowerStatus cachedPower = {true, true, false, 4110, 100, 5000, 4330};
+
+/**
+ * @brief Actualiza el registro de volumen digital (0x32) del chip de audio ES8311 (0x18) si está activo.
+ */
+static void applyHardwareVolume(uint8_t volumePct) {
+    if (volumePct > 100) volumePct = 100;
+    currentVolumePct = volumePct;
+
+    // Escala de 0..100% a registro DAC ES8311 (0x00 = silencio, 0xBF = 0dB máximo limpio)
+    uint8_t regVal = (uint8_t)((volumePct * 0xBF) / 100);
+    Wire.beginTransmission(I2C_ADDR_ES8311);
+    Wire.write(0x32);
+    Wire.write(regVal);
+    Wire.endTransmission();
+}
 
 static void lvgl_flush_cb(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p) {
     hal_display_push_colors(
@@ -52,7 +71,6 @@ static void lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area) {
 }
 
 static void lvgl_touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
-    // Si la pantalla está apagada con el botón PWR, ignorar toques accidentales
     if (!hal_display_is_on()) {
         data->state = LV_INDEV_STATE_REL;
         return;
@@ -75,39 +93,52 @@ static void slider_brightness_event_cb(lv_event_t *e) {
     if (val < 15) val = 15;
     hal_display_set_brightness((uint8_t)val);
 
-    if (lblBrightVal) {
+    if (lblBrightPct) {
         int pct = (val * 100) / 255;
-        lv_label_set_text_fmt(lblBrightVal, "Brillo de pantalla: %d%%", pct);
+        lv_label_set_text_fmt(lblBrightPct, "%d%%", pct);
     }
     scr_watchface_update_power(cachedPower, (uint8_t)val);
 }
 
-/**
- * @brief Botones táctiles en el Centro de Control para ajustar la hora del chip RTC PCF85063.
- */
-static void btn_adjust_time_cb(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
-    intptr_t mode = (intptr_t)lv_event_get_user_data(e);
+static void slider_volume_event_cb(lv_event_t *e) {
+    lv_obj_t *slider = lv_event_get_target(e);
+    int32_t val = lv_slider_get_value(slider);
+    if (val < 0) val = 0;
+    if (val > 100) val = 100;
 
-    WatchDateTime dt = hal_rtc_get_time();
-    if (mode == 1) {
-        dt.hour = (dt.hour + 1) % 24;
-    } else if (mode == 2) {
-        dt.minute = (dt.minute + 1) % 60;
-        dt.second = 0;
-    } else if (mode == 3) {
-        dt.minute = (dt.minute == 0) ? 59 : (dt.minute - 1);
-        dt.second = 0;
+    applyHardwareVolume((uint8_t)val);
+
+    if (lblVolumePct) {
+        lv_label_set_text_fmt(lblVolumePct, "%d%%", (int)val);
     }
-    hal_rtc_set_time(dt);
-    scr_watchface_update_time(dt);
+}
+
+static lv_obj_t *create_clean_card(lv_obj_t *parent, lv_coord_t yOffset, lv_coord_t height) {
+    lv_obj_t *card = lv_obj_create(parent);
+    lv_obj_set_size(card, 366, height);
+    lv_obj_align(card, LV_ALIGN_TOP_MID, 0, yOffset);
+    lv_obj_set_style_pad_all(card, 0, 0);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x0C0C0E), 0);
+    lv_obj_set_style_border_color(card, lv_color_hex(0x27272A), 0);
+    lv_obj_set_style_border_width(card, 1, 0);
+    lv_obj_set_style_radius(card, 14, 0);
+    lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+    return card;
+}
+
+static void style_monochrome_slider(lv_obj_t *slider) {
+    lv_obj_set_size(slider, 318, 18);
+    lv_obj_align(slider, LV_ALIGN_TOP_MID, 0, 68);
+    lv_obj_set_style_bg_color(slider, lv_color_hex(0x27272A), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(slider, lv_color_hex(0xD4D4D8), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(slider, lv_color_hex(0xF4F4F5), LV_PART_KNOB);
 }
 
 static void build_ui() {
     lv_obj_t *scr = lv_scr_act();
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), 0);
 
-    // Tileview para deslizar suavemente entre la Watchface (Tile 1) y el Centro de Control (Tile 2)
+    // Tileview para deslizar suavemente entre la Watchface (Tile 1) y Ajustes (Tile 2)
     lv_obj_t *tv = lv_tileview_create(scr);
     lv_obj_set_size(tv, WATCH_LCD_WIDTH, WATCH_LCD_HEIGHT);
     lv_obj_set_style_bg_color(tv, lv_color_hex(0x000000), 0);
@@ -119,7 +150,7 @@ static void build_ui() {
     // 1. Construir la Watchface Principal en la Pantalla 1
     scr_watchface_build(tileWatchface);
 
-    // 2. Construir el Panel de Ajustes en la Pantalla 2 (estética neutra y sobria)
+    // 2. Construir el Panel de Ajustes simplificado en la Pantalla 2
     lv_obj_set_style_pad_all(tileSettings, 0, 0);
     lv_obj_set_style_bg_color(tileSettings, lv_color_hex(0x000000), 0);
 
@@ -128,101 +159,75 @@ static void build_ui() {
     lv_obj_set_style_text_color(title2, lv_color_hex(0xD4D4D8), 0);
     lv_obj_set_style_text_letter_space(title2, 4, 0);
     lv_label_set_text(title2, "AJUSTES");
-    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 18);
+    lv_obj_align(title2, LV_ALIGN_TOP_MID, 0, 22);
 
-    // --- Bloque A: Brillo AMOLED (Y = 60..176, alto = 116 px) ---
-    lv_obj_t *cardBright = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardBright, 366, 116);
-    lv_obj_align(cardBright, LV_ALIGN_TOP_MID, 0, 60);
-    lv_obj_set_style_pad_all(cardBright, 0, 0);
-    lv_obj_set_style_bg_color(cardBright, lv_color_hex(0x0C0C0E), 0);
-    lv_obj_set_style_border_color(cardBright, lv_color_hex(0x27272A), 0);
-    lv_obj_set_style_border_width(cardBright, 1, 0);
-    lv_obj_set_style_radius(cardBright, 14, 0);
-    lv_obj_clear_flag(cardBright, LV_OBJ_FLAG_SCROLLABLE);
+    // --- Bloque 1: Brillo (Y = 74..192, alto = 118 px) ---
+    lv_obj_t *cardBright = create_clean_card(tileSettings, 74, 118);
 
-    lblBrightVal = lv_label_create(cardBright);
-    lv_obj_set_style_text_font(lblBrightVal, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(lblBrightVal, lv_color_hex(0xD4D4D8), 0);
-    lv_label_set_text(lblBrightVal, "Brillo de pantalla: 86%");
-    lv_obj_align(lblBrightVal, LV_ALIGN_TOP_LEFT, 22, 16);
+    lv_obj_t *lblBrightTitle = lv_label_create(cardBright);
+    lv_obj_set_style_text_font(lblBrightTitle, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lblBrightTitle, lv_color_hex(0xA1A1AA), 0);
+    lv_label_set_text(lblBrightTitle, "Brillo");
+    lv_obj_align(lblBrightTitle, LV_ALIGN_TOP_LEFT, 22, 18);
+
+    lblBrightPct = lv_label_create(cardBright);
+    lv_obj_set_style_text_font(lblBrightPct, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lblBrightPct, lv_color_hex(0xF4F4F5), 0);
+    int initialBrightPct = (hal_display_get_brightness() * 100) / 255;
+    lv_label_set_text_fmt(lblBrightPct, "%d%%", initialBrightPct);
+    lv_obj_align(lblBrightPct, LV_ALIGN_TOP_RIGHT, -22, 18);
 
     sliderBright = lv_slider_create(cardBright);
-    lv_obj_set_size(sliderBright, 314, 20);
-    lv_obj_align(sliderBright, LV_ALIGN_TOP_MID, 0, 68);
+    style_monochrome_slider(sliderBright);
     lv_slider_set_range(sliderBright, 15, 255);
     lv_slider_set_value(sliderBright, hal_display_get_brightness(), LV_ANIM_OFF);
-    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0x27272A), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0xD4D4D8), LV_PART_INDICATOR);
-    lv_obj_set_style_bg_color(sliderBright, lv_color_hex(0xF4F4F5), LV_PART_KNOB);
     lv_obj_add_event_cb(sliderBright, slider_brightness_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
 
-    // --- Bloque B: Ajuste de Hora (Y = 192..324, alto = 132 px) ---
-    lv_obj_t *cardRtc = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardRtc, 366, 132);
-    lv_obj_align(cardRtc, LV_ALIGN_TOP_MID, 0, 192);
-    lv_obj_set_style_pad_all(cardRtc, 0, 0);
-    lv_obj_set_style_bg_color(cardRtc, lv_color_hex(0x0C0C0E), 0);
-    lv_obj_set_style_border_color(cardRtc, lv_color_hex(0x27272A), 0);
-    lv_obj_set_style_border_width(cardRtc, 1, 0);
-    lv_obj_set_style_radius(cardRtc, 14, 0);
-    lv_obj_clear_flag(cardRtc, LV_OBJ_FLAG_SCROLLABLE);
+    // --- Bloque 2: Volumen (Y = 210..328, alto = 118 px) ---
+    lv_obj_t *cardVol = create_clean_card(tileSettings, 210, 118);
 
-    lv_obj_t *lblRtcTitle = lv_label_create(cardRtc);
-    lv_obj_set_style_text_font(lblRtcTitle, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(lblRtcTitle, lv_color_hex(0xA1A1AA), 0);
-    lv_label_set_text(lblRtcTitle, "Ajuste manual de hora");
-    lv_obj_align(lblRtcTitle, LV_ALIGN_TOP_LEFT, 22, 14);
+    lv_obj_t *lblVolTitle = lv_label_create(cardVol);
+    lv_obj_set_style_text_font(lblVolTitle, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lblVolTitle, lv_color_hex(0xA1A1AA), 0);
+    lv_label_set_text(lblVolTitle, "Volumen");
+    lv_obj_align(lblVolTitle, LV_ALIGN_TOP_LEFT, 22, 18);
 
-    const char *btnLabels[3] = {"+1 Hora", "+1 Min", "-1 Min"};
-    for (int i = 0; i < 3; i++) {
-        lv_obj_t *btn = lv_btn_create(cardRtc);
-        lv_obj_set_size(btn, 104, 54);
-        lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 18 + (i * 114), 58);
-        lv_obj_set_style_bg_color(btn, lv_color_hex(0x18181B), 0);
-        lv_obj_set_style_border_color(btn, lv_color_hex(0x3F3F46), 0);
-        lv_obj_set_style_border_width(btn, 1, 0);
-        lv_obj_set_style_shadow_width(btn, 0, 0);
-        lv_obj_set_style_radius(btn, 10, 0);
-        lv_obj_add_event_cb(btn, btn_adjust_time_cb, LV_EVENT_CLICKED, (void *)(intptr_t)(i + 1));
+    lblVolumePct = lv_label_create(cardVol);
+    lv_obj_set_style_text_font(lblVolumePct, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lblVolumePct, lv_color_hex(0xF4F4F5), 0);
+    lv_label_set_text_fmt(lblVolumePct, "%d%%", currentVolumePct);
+    lv_obj_align(lblVolumePct, LV_ALIGN_TOP_RIGHT, -22, 18);
 
-        lv_obj_t *lbl = lv_label_create(btn);
-        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_18, 0);
-        lv_obj_set_style_text_color(lbl, lv_color_hex(0xF4F4F5), 0);
-        lv_label_set_text(lbl, btnLabels[i]);
-        lv_obj_center(lbl);
-    }
+    sliderVolume = lv_slider_create(cardVol);
+    style_monochrome_slider(sliderVolume);
+    lv_slider_set_range(sliderVolume, 0, 100);
+    lv_slider_set_value(sliderVolume, currentVolumePct, LV_ANIM_OFF);
+    lv_obj_add_event_cb(sliderVolume, slider_volume_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
 
-    // --- Bloque C: Estado de Batería (Y = 338..470, alto = 132 px) ---
-    lv_obj_t *cardBatt = lv_obj_create(tileSettings);
-    lv_obj_set_size(cardBatt, 366, 132);
-    lv_obj_align(cardBatt, LV_ALIGN_TOP_MID, 0, 338);
-    lv_obj_set_style_pad_all(cardBatt, 0, 0);
-    lv_obj_set_style_bg_color(cardBatt, lv_color_hex(0x0C0C0E), 0);
-    lv_obj_set_style_border_color(cardBatt, lv_color_hex(0x27272A), 0);
-    lv_obj_set_style_border_width(cardBatt, 1, 0);
-    lv_obj_set_style_radius(cardBatt, 14, 0);
-    lv_obj_clear_flag(cardBatt, LV_OBJ_FLAG_SCROLLABLE);
+    // --- Bloque 3: Batería (Y = 346..460, alto = 114 px) ---
+    lv_obj_t *cardBatt = create_clean_card(tileSettings, 346, 114);
 
-    lblBatteryInfo = lv_label_create(cardBatt);
-    lv_obj_set_style_text_font(lblBatteryInfo, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(lblBatteryInfo, lv_color_hex(0xD4D4D8), 0);
-    lv_label_set_text(lblBatteryInfo, "Bateria: 100% (4110 mV)");
-    lv_obj_align(lblBatteryInfo, LV_ALIGN_TOP_LEFT, 22, 14);
+    lv_obj_t *lblBattTitle = lv_label_create(cardBatt);
+    lv_obj_set_style_text_font(lblBattTitle, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lblBattTitle, lv_color_hex(0xA1A1AA), 0);
+    lv_label_set_text(lblBattTitle, "Bateria");
+    lv_obj_align(lblBattTitle, LV_ALIGN_TOP_LEFT, 22, 18);
+
+    lblBattPct = lv_label_create(cardBatt);
+    lv_obj_set_style_text_font(lblBattPct, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(lblBattPct, lv_color_hex(0xF4F4F5), 0);
+    lv_label_set_text(lblBattPct, "100%");
+    lv_obj_align(lblBattPct, LV_ALIGN_TOP_RIGHT, -22, 18);
 
     barBattery = lv_bar_create(cardBatt);
-    lv_obj_set_size(barBattery, 322, 14);
-    lv_obj_align(barBattery, LV_ALIGN_TOP_MID, 0, 58);
+    lv_obj_set_size(barBattery, 322, 16);
+    lv_obj_align(barBattery, LV_ALIGN_TOP_MID, 0, 68);
     lv_bar_set_range(barBattery, 0, 100);
     lv_bar_set_value(barBattery, 100, LV_ANIM_OFF);
+    lv_obj_set_style_radius(barBattery, 8, LV_PART_MAIN);
+    lv_obj_set_style_radius(barBattery, 8, LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(barBattery, lv_color_hex(0x27272A), LV_PART_MAIN);
     lv_obj_set_style_bg_color(barBattery, lv_color_hex(0xD4D4D8), LV_PART_INDICATOR);
-
-    lblButtonEvent = lv_label_create(cardBatt);
-    lv_obj_set_style_text_font(lblButtonEvent, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(lblButtonEvent, lv_color_hex(0x71717A), 0);
-    lv_label_set_text(lblButtonEvent, "Tap-to-Wake: Activo (20s)");
-    lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 22, 92);
 }
 
 bool ui_manager_init() {
@@ -268,14 +273,8 @@ void ui_manager_update_power(const WatchPowerStatus &status) {
     cachedPower = status;
     scr_watchface_update_power(status, hal_display_get_brightness());
 
-    if (lblBatteryInfo) {
-        lv_label_set_text_fmt(
-            lblBatteryInfo,
-            "Bateria: %d%% (%u mV) %s",
-            status.batteryPercent,
-            status.batteryVoltageMv,
-            status.isCharging ? "[CARGANDO]" : "[USB OK]"
-        );
+    if (lblBattPct) {
+        lv_label_set_text_fmt(lblBattPct, "%d%%", status.batteryPercent);
     }
     if (barBattery) {
         lv_bar_set_value(barBattery, status.batteryPercent, LV_ANIM_ON);
@@ -283,18 +282,20 @@ void ui_manager_update_power(const WatchPowerStatus &status) {
 }
 
 void ui_manager_notify_button(const char *buttonText) {
-    if (lblButtonEvent) {
-        lv_label_set_text_fmt(lblButtonEvent, "Estado: %s", buttonText);
-    }
+    (void)buttonText;
 }
 
 void ui_manager_sync_brightness(uint8_t brightness) {
     if (sliderBright && brightness >= 15) {
         lv_slider_set_value(sliderBright, brightness, LV_ANIM_ON);
     }
-    if (lblBrightVal) {
+    if (lblBrightPct) {
         int pct = (brightness * 100) / 255;
-        lv_label_set_text_fmt(lblBrightVal, "Brillo de pantalla: %d%%", pct);
+        lv_label_set_text_fmt(lblBrightPct, "%d%%", pct);
     }
     scr_watchface_update_power(cachedPower, brightness);
+}
+
+uint8_t ui_manager_get_volume() {
+    return currentVolumePct;
 }
