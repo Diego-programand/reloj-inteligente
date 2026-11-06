@@ -16,7 +16,7 @@
 #define TOUCH_GRACE_PERIOD_MS       5000
 
 // Margen tras apagar manualmente con el botón PWR para que soltar el botón no la re-encienda
-#define MANUAL_OFF_COOLDOWN_MS      1500
+#define MANUAL_OFF_COOLDOWN_MS      600
 
 static uint32_t lastActivityMs   = 0;
 static uint32_t lastTouchMs      = 0;
