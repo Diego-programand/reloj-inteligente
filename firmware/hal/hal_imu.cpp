@@ -1,6 +1,6 @@
 /**
  * @file hal_imu.cpp
- * @brief Implementación del driver I2C y detector de gesto de muñeca para QMI8658 (0x6B).
+ * @brief Implementación del driver I2C y detector sensible de gesto/movimiento para QMI8658 (0x6B).
  */
 
 #include "hal_imu.h"
@@ -22,12 +22,15 @@ static TwoWire *imuWire = nullptr;
 static uint8_t imuAddr = I2C_ADDR_QMI8658;
 static bool imuReady = false;
 
-// Estado interno del detector de gesto de muñeca
+// Estado interno del detector de gesto de muñeca y movimiento
 static bool wasInViewingPose = true;
-static uint32_t lastMotionMs = 0;
-static uint32_t poseEnterMs  = 0;
 static uint32_t lowerArmEnterMs = 0;
-static float prevAx = 0.0f, prevAy = 0.0f, prevAz = 1.0f;
+
+// Vector de gravedad filtrado (promedio lento) para detectar cualquier inclinación o levantamiento suave
+static float baselineAx = 0.0f;
+static float baselineAy = 0.0f;
+static float baselineAz = 1.0f;
+static bool  baselineInit = false;
 
 static bool writeReg(uint8_t reg, uint8_t val) {
     if (!imuWire) return false;
@@ -60,7 +63,6 @@ bool hal_imu_init(TwoWire &wire) {
 
     uint8_t who = 0;
     if (!readRegs(QMI8658_REG_WHO_AM_I, &who, 1) || who != QMI8658_WHO_AM_I_VAL) {
-        // Probar dirección alternativa 0x6A por seguridad
         imuAddr = 0x6A;
         if (!readRegs(QMI8658_REG_WHO_AM_I, &who, 1) || who != QMI8658_WHO_AM_I_VAL) {
             imuReady = false;
@@ -70,9 +72,9 @@ bool hal_imu_init(TwoWire &wire) {
 
     // 1. Reset por software del chip QMI8658
     writeReg(QMI8658_REG_RESET, 0xB0);
-    delay(15);
+    delay(30);
 
-    // 2. CTRL1 (0x02): Activar auto-incremento de direcciones I2C (ADDR_AI = bit 6) y formato Little-Endian
+    // 2. CTRL1 (0x02): Auto-incremento de direcciones I2C (ADDR_AI = bit 6) y formato Little-Endian
     writeReg(QMI8658_REG_CTRL1, 0x40);
 
     // 3. CTRL2 (0x03): Acelerómetro en rango ±4g (0x10) y frecuencia 125 Hz (0x06) -> 0x16
@@ -109,8 +111,8 @@ ImuData hal_imu_read() {
     int16_t gzRaw = (int16_t)((uint16_t)raw[10] | ((uint16_t)raw[11] << 8));
 
     // Escala ±4g -> 8192 LSB por cada 1g.
-    // Nota de hardware: El chip QMI8658 está soldado en la cara inferior del PCB,
-    // por lo que invertimos el signo de Z para que +1.0g equivalga a "pantalla mirando hacia arriba".
+    // El chip QMI8658 está soldado en la cara inferior del PCB, por lo que invertimos Z
+    // para que +1.0g equivalga a "pantalla mirando hacia arriba".
     d.accelX =  (float)axRaw / 8192.0f;
     d.accelY =  (float)ayRaw / 8192.0f;
     d.accelZ = -(float)azRaw / 8192.0f;
@@ -132,50 +134,48 @@ WristGesture hal_imu_poll_gesture(ImuData *outData) {
     }
     if (!d.valid) return WRIST_GESTURE_NONE;
 
-    uint32_t now = millis();
-
-    // 1. Detectar si hubo movimiento físico reciente (giro de muñeca o cambio de aceleración)
-    float deltaA = fabsf(d.accelX - prevAx) + fabsf(d.accelY - prevAy) + fabsf(d.accelZ - prevAz);
-    prevAx = d.accelX;
-    prevAy = d.accelY;
-    prevAz = d.accelZ;
-
-    if (d.gyroTotal > 32.0f || deltaA > 0.18f) {
-        lastMotionMs = now;
+    if (!baselineInit) {
+        baselineAx = d.accelX;
+        baselineAy = d.accelY;
+        baselineAz = d.accelZ;
+        baselineInit = true;
     }
 
-    // 2. ¿Está la pantalla en postura de lectura?
-    //    Con el eje Z corregido (+1.0g = pantalla hacia arriba), cualquier ángulo desde
-    //    inclinado hacia tus ojos (az >= 0.35g) hasta horizontal es postura de lectura.
-    bool isViewingPose = (d.accelZ >= 0.35f) && (fabsf(d.accelX) < 0.90f) && (fabsf(d.accelY) < 0.90f);
+    // 1. Calcular cuánto se ha inclinado o movido el reloj respecto a su postura de reposo reciente
+    float tiltDelta = fabsf(d.accelX - baselineAx) +
+                      fabsf(d.accelY - baselineAy) +
+                      fabsf(d.accelZ - baselineAz);
 
-    // 3. ¿Está el reloj volteado hacia abajo / brazo completamente girado hacia afuera?
-    //    Solo consideramos brazo bajado cuando el cristal apunta claramente hacia abajo (az < -0.25g).
-    bool isArmLowered = (d.accelZ < -0.25f);
+    // Actualizar suavemente la línea base de reposo (filtro exponencial lento)
+    baselineAx = baselineAx * 0.88f + d.accelX * 0.12f;
+    baselineAy = baselineAy * 0.88f + d.accelY * 0.12f;
+    baselineAz = baselineAz * 0.88f + d.accelZ * 0.12f;
+
+    // 2. ¿Está la pantalla orientada hacia el usuario? (desde ligeramente inclinada az >= 0.15g hasta plana +1.0g)
+    bool isViewingPose = (d.accelZ >= 0.15f);
+
+    // 3. ¿Está el reloj claramente volteado hacia abajo? (az < -0.30g)
+    bool isFaceDown = (d.accelZ < -0.30f);
 
     if (!isViewingPose) {
-        // Salió de la postura de lectura (ej. bajó el brazo o inclinó el reloj de lado)
         wasInViewingPose = false;
-        poseEnterMs = 0;
     } else {
-        // Está en postura de lectura:
-        // Caso A: Venía de tener el brazo abajo/inclinado (!wasInViewingPose) y lo subió a la vista.
-        // Caso B: El reloj estaba quieto sobre la mesa con la pantalla apagada y el usuario lo movió/levantó.
-        if (!wasInViewingPose) {
-            if (poseEnterMs == 0) {
-                poseEnterMs = now;
-            } else if ((now - poseEnterMs >= 60) && (now - lastMotionMs <= 1500)) {
-                wasInViewingPose = true;
-                poseEnterMs = 0;
-                return WRIST_GESTURE_RAISE_TO_VIEW;
-            }
-        } else if (d.gyroTotal > 45.0f || deltaA > 0.25f) {
+        // Despertar si:
+        // A) El reloj venía de estar inclinado afuera/abajo (!wasInViewingPose) y entró en postura de vista, O
+        // B) El usuario giró o levantó el reloj suavemente (giro >= 14 dps o cambio de inclinación >= 0.14g)
+        if (!wasInViewingPose || d.gyroTotal >= 14.0f || tiltDelta >= 0.14f) {
+            wasInViewingPose = true;
+            // Sincronizar baseline para no disparar en bucle mientras ya está quieto
+            baselineAx = d.accelX;
+            baselineAy = d.accelY;
+            baselineAz = d.accelZ;
             return WRIST_GESTURE_RAISE_TO_VIEW;
         }
     }
 
-    // 4. Detección de brazo bajado sostenido (> 500 ms) para apagar la pantalla sin esperar todo el timeout
-    if (isArmLowered) {
+    // 4. Si se voltea el reloj hacia abajo durante 500 ms, apagar pantalla
+    uint32_t now = millis();
+    if (isFaceDown) {
         if (lowerArmEnterMs == 0) {
             lowerArmEnterMs = now;
         } else if (now - lowerArmEnterMs >= 500) {

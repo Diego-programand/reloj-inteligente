@@ -53,3 +53,4 @@ ImuData hal_imu_read();
  *        Debe llamarse periódicamente (ej. cada 40-50 ms).
  */
 WristGesture hal_imu_poll_gesture(ImuData *outData = nullptr);
+

@@ -46,3 +46,4 @@ bool power_manager_is_wrist_wake_enabled();
  * @param outImu Puntero opcional para recibir la última lectura del acelerómetro/giroscopio.
  */
 void power_manager_update(ImuData *outImu = nullptr);
+

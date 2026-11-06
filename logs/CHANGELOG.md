@@ -10,7 +10,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ### Añadido (Added)
 * Módulo `hal_imu` (`firmware/hal/hal_imu.h` y `firmware/hal/hal_imu.cpp`): Driver I2C para el acelerómetro y giroscopio de 6 ejes `QMI8658` (`0x6B`) con filtro paso-bajo y detector de gestos de muñeca (*Wake-on-Wrist-Raise* y *Sleep-on-Wrist-Drop*).
-* Módulo `power_manager` (`firmware/services/power_manager.h` y `firmware/services/power_manager.cpp`): Máquina de estados que apaga automáticamente la pantalla AMOLED tras 15 segundos de inactividad o al bajar el brazo, y la despierta al instante al levantar la muñeca para mirar la hora o al presionar el botón `PWR`.
+* Módulo `power_manager` (`firmware/services/power_manager.h` y `firmware/services/power_manager.cpp`): Máquina de estados que apaga automáticamente la pantalla AMOLED tras 20 segundos de inactividad o al voltear el reloj hacia abajo, y la despierta al instante al levantar/inclinar suavemente el reloj, al **tocar la pantalla (*Tap-to-Wake*)** o al presionar el botón `PWR`.
 
 ---
 
