@@ -46,11 +46,11 @@ bool hal_display_init() {
     pinMode(WATCH_LCD_TE_EN_PIN, INPUT);
     pinMode(WATCH_LCD_RST_PIN, OUTPUT);
 
-    // Pulso de reinicio físico: apaga la imagen congelada anterior y despierta el chip limpio
+    // Pulso de reinicio físico: apaga cualquier estado previo y despierta el chip limpio
     digitalWrite(WATCH_LCD_RST_PIN, HIGH);
-    delay(20);
+    delay(30);
     digitalWrite(WATCH_LCD_RST_PIN, LOW);
-    delay(50);
+    delay(100);
     digitalWrite(WATCH_LCD_RST_PIN, HIGH);
     delay(150);
 
@@ -156,8 +156,6 @@ uint8_t hal_display_get_brightness() {
 
 void hal_display_set_power(bool on) {
     if (on) {
-        sendLcdCmd(0x11, nullptr, 0); // Sleep OUT
-        delay(60);
         sendLcdCmd(0x29, nullptr, 0); // Display ON
         delay(10);
         uint8_t restoreBright = (currentBrightness > 0) ? currentBrightness : 220;
@@ -166,9 +164,7 @@ void hal_display_set_power(bool on) {
     } else {
         uint8_t zero = 0;
         sendLcdCmd(0x51, &zero, 1);   // Brillo a 0 inmediatamente
-        sendLcdCmd(0x28, nullptr, 0); // Display OFF
-        delay(10);
-        sendLcdCmd(0x10, nullptr, 0); // Sleep IN (bajo consumo en CO5300)
+        sendLcdCmd(0x28, nullptr, 0); // Display OFF (apaga matriz AMOLED sin desconfigurar bomba de carga)
         displayPowerOn = false;
     }
 }
