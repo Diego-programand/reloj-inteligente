@@ -10,6 +10,7 @@
 #include "hal/hal_display.h"
 #include "hal/hal_touch.h"
 #include "hal/hal_rtc.h"
+#include "services/power_manager.h"
 #include "ui/screens/scr_watchface.h"
 
 // Buffer de PANTALLA COMPLETA (502 líneas completas en Octal PSRAM)
@@ -59,6 +60,7 @@ static void lvgl_touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 
     TouchPoint tp = hal_touch_read();
     if (tp.touched) {
+        power_manager_notify_user_activity();
         data->state   = LV_INDEV_STATE_PR;
         data->point.x = tp.x;
         data->point.y = tp.y;
@@ -219,7 +221,7 @@ static void build_ui() {
     lblButtonEvent = lv_label_create(cardBatt);
     lv_obj_set_style_text_font(lblButtonEvent, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(lblButtonEvent, lv_color_hex(0x71717A), 0);
-    lv_label_set_text(lblButtonEvent, "Sistema activo");
+    lv_label_set_text(lblButtonEvent, "Gesto muneca: Activo (15s)");
     lv_obj_align(lblButtonEvent, LV_ALIGN_TOP_LEFT, 22, 92);
 }
 
@@ -282,7 +284,7 @@ void ui_manager_update_power(const WatchPowerStatus &status) {
 
 void ui_manager_notify_button(const char *buttonText) {
     if (lblButtonEvent) {
-        lv_label_set_text_fmt(lblButtonEvent, "Boton fisico: %s", buttonText);
+        lv_label_set_text_fmt(lblButtonEvent, "Estado: %s", buttonText);
     }
 }
 

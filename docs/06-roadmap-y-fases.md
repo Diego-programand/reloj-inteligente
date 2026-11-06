@@ -44,13 +44,13 @@ Para avanzar con velocidad y **cero errores acumulados**, construiremos el reloj
 
 ---
 
-## Fase 4: Movimiento (`QMI8658`), Cuenta Pasos y Ahorro de Batería
-* **Objetivo:** Que el reloj funcione en tu muñeca de forma autónoma y eficiente con batería.
+## Fase 4: Sensor de Movimiento (`QMI8658`), Gesto de Muñeca y Ahorro de Batería — [COMPLETADA]
+* **Objetivo:** Que el reloj funcione en tu muñeca de forma autónoma, elegante y eficiente con batería (sin contador de pasos).
 * **Tareas:**
-  1. Implementar `hal_imu` con el sensor de 6 ejes **QMI8658**.
-  2. Configurar el contador de pasos diario y mostrarlo en la Watchface.
-  3. Implementar la máquina de estados de energía (`power_manager`): apagado automático de pantalla tras inactividad y **encendido automático al levantar/girar la muñeca** (*Wake on Wrist Tilt*) o pulsar el botón lateral.
-* **Criterio de éxito:** La pantalla se apaga sola para ahorrar batería y se enciende al instante cuando levantas el brazo para mirar la hora.
+  1. [x] Implementar `hal_imu` con el sensor de 6 ejes **QMI8658** (`0x6B`, acelerómetro 3D `±4g` + giroscopio 3D `±512 dps` con filtro paso-bajo interno).
+  2. [x] Implementar detector de postura e inclinación de muñeca (*Wake-on-Wrist-Raise* al girar el reloj hacia el rostro y *Sleep-on-Wrist-Drop* al bajar el brazo).
+  3. [x] Implementar la máquina de estados de energía (`power_manager`): apagado automático de pantalla tras 15 s de inactividad, apagado rápido al bajar el brazo, reinicio del temporizador al tocar la pantalla y encendido/apagado inmediato con el botón `PWR`.
+* **Criterio de éxito:** La pantalla se apaga sola para ahorrar batería y se enciende al instante cuando levantas el brazo para mirar la hora. *(Completado en Entrada #007 de la Bitácora).*
 
 ---
 

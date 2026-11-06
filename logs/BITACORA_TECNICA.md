@@ -121,6 +121,27 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #007 — 2026-11-06: Fase 4 Completada — Sensor de Movimiento (`QMI8658`), Gesto de Muñeca y Ahorro Inteligente de Pantalla
+
+* **Fase del Roadmap:** Fase 4 (Completada)
+* **Archivos Modificados:** `firmware/hal/hal_imu.h`, `firmware/hal/hal_imu.cpp`, `firmware/services/power_manager.h`, `firmware/services/power_manager.cpp`, `firmware/ui/ui_manager.cpp`, `firmware/main.cpp`, `docs/06-roadmap-y-fases.md`
+* **Qué se hizo:**
+  1. **Driver directo `hal_imu` para la IMU de 6 ejes `QMI8658` (`0x6B`):**
+     * Verificación de identidad (`WHO_AM_I = 0x05`), reset por software (`0x60 = 0xB0`), activación de auto-incremento I2C (`CTRL1 = 0x40`), acelerómetro 3D en escala `±4g @ 125 Hz` (`CTRL2 = 0x16`), giroscopio 3D en escala `±512 dps @ 125 Hz` (`CTRL3 = 0x56`) y filtros digitales paso-bajo (`CTRL5 = 0x11`).
+     * **Hallazgo de orientación física del chip en el PCB:** El chip `QMI8658` está soldado en la cara inferior de la placa, por lo que con la pantalla mirando hacia el cielo su eje `Z` crudo mide `-0.93g`. Se invirtió el signo en `hal_imu_read()` (`d.accelZ = -azRaw / 8192.0f`) para que `+1.0g` corresponda siempre a "pantalla mirando hacia arriba".
+  2. **Detección de gesto de muñeca (sin contador de pasos, por preferencia de diseño minimalista):**
+     * **Encendido al levantar la muñeca (`WRIST_GESTURE_RAISE_TO_VIEW`):** Detecta cuando el reloj pasa de una postura no visible a la postura de lectura (`accelZ >= +0.48g`, cristal mirando hacia el usuario) acompañado de un movimiento reciente de giro o traslación.
+     * **Apagado al bajar el brazo (`WRIST_GESTURE_LOWER_ARM`):** Detecta cuando el brazo baja o la muñeca gira hacia afuera (`accelZ < +0.12g` sostenido por 500 ms).
+  3. **Gestor de energía de pantalla (`power_manager`):**
+     * Apaga el panel AMOLED (`0x28` Display OFF + `0x10` Sleep IN) tras **15 segundos** sin tocar la pantalla o al bajar el brazo (respetando un margen de 4 s tras cualquier toque táctil).
+     * Despierta instantáneamente la pantalla al levantar la muñeca o pulsar el botón `PWR`, actualizando primero el buffer de hora en PSRAM para que la pantalla encienda directamente con el minuto actual.
+* **Resultado / Verificación en COM5:**
+  * Inicialización confirmada: `[EXITO] Sensor QMI8658 activo (Acelerometro 3D + Giroscopio 3D)` y telemetría en vivo de inclinación (`IMU Z`) y velocidad angular (`Giro dps`).
+* **Cómo Revertir (Rollback):**
+  * `git checkout c6d24f4` para volver al cierre de la Fase 3.
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown
