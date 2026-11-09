@@ -2,7 +2,7 @@
 backups/*.bin
 !backups/factory_backup_32MB.bin
 
-# Ignorar carpetas de compilación temporal y configuración local del IDE
+# Ignorar archivos de compilación temporal y configuración local del IDE
 .pio/
 build/
 .vscode/
@@ -10,4 +10,7 @@ compile_commands.json
 .clangd
 *.elf
 *.map
+
+# Ignorar secretos y credenciales locales de Wi-Fi / Nube (NUNCA subir a Git)
+firmware/config/wifi_secrets.h
 

@@ -67,34 +67,34 @@ Copia y pega este bloque en tus respuestas o indícame tus números preferidos:
 
 ### Bloque 1: Google Calendar
 * **1.1. ¿Cómo prefieres ver tus eventos en la pantalla principal?**
-  * [ ] **Opción A (Ultra minimalista):** Solo una línea sutil bajo la hora: *"16:00 · Reunión (en 20m)"*. Al tocarla, se abre el detalle.
+  * [X] **Opción A (Ultra minimalista):** Solo una línea sutil bajo la hora: *"16:00 · Reunión (en 20m)"*. Al tocarla, se abre el detalle.
   * [ ] **Opción B (Línea de tiempo / Timeline):** Una pantalla dedicada al deslizar hacia la izquierda con los 3 próximos eventos del día en tarjetas titanio.
   * [ ] **Opción C:** Ambas cosas (resumen sutil en la hora + pantalla completa de agenda al deslizar).
 * **1.2. Frecuencia de sincronización:**
-  * [ ] **Automática:** Se conecta al Wi-Fi 3 segundos cada 30 minutos (óptimo para batería).
+  * [X] **Automática:** Se conecta al Wi-Fi 3 segundos cada 30 minutos (óptimo para batería).
   * [ ] **Bajo demanda:** Solo se sincroniza al amanecer o cuando tocas el botón de "Actualizar".
 
 ### Bloque 2: Agente de IA en Telegram
 * **2.1. ¿Cómo quieres interactuar con la IA?**
   * [ ] **Modo Walkie-Talkie:** Mantener pulsado el botón físico lateral, hablar y soltar.
-  * [ ] **Modo Táctil:** Tocar un botón en la pantalla para empezar a grabar y tocar otra vez para enviar.
+  * [X] **Modo Táctil:** Tocar un botón en la pantalla para empezar a grabar y tocar otra vez para enviar.
 * **2.2. ¿Cómo prefieres recibir las respuestas de la IA?**
-  * [ ] **Solo Texto en Pantalla:** Lectura rápida en la pantalla AMOLED (silencioso y discreto en reuniones).
-  * [ ] **Voz por Altavoz:** Que el reloj te hable en voz alta con audio sintetizado.
+  * [] **Solo Texto en Pantalla:** Lectura rápida en la pantalla AMOLED (silencioso y discreto en reuniones).
+  * [X] **Voz por Altavoz:** Que el reloj te hable en voz alta con audio sintetizado.
   * [ ] **Híbrido:** Muestra el texto y reproduce audio solo si mantienes pulsado el altavoz.
 
 ### Bloque 3: Control de YouTube Music y Llamadas
 * **3.1. Método de conexión al celular:**
   * [ ] **Opción A (Sin instalar nada en el móvil - BLE HID):** El móvil reconoce el reloj como un teclado/mando multimedia Bluetooth. Permite Play/Pausa, Skip y Volumen al instante. (No muestra título de la canción).
-  * [ ] **Opción B (Con App Compañera Gratuita - Chronos / Gadgetbridge):** Instalas una app liviana en Android. Permite ver el **Título de la canción**, el **Artista**, ver **quién te llama por teléfono** con botón de silenciar y recibir notificaciones de WhatsApp/Telegram.
+  * [X] **Opción B (Con App Compañera Gratuita - Chronos / Gadgetbridge):** Instalas una app liviana en Android. Permite ver el **Título de la canción**, el **Artista**, ver **quién te llama por teléfono** con botón de silenciar y recibir notificaciones de WhatsApp/Telegram.
 * **3.2. ¿Qué notificaciones quieres en la muñeca?**
   * [ ] Solo llamadas entrantes y recordatorios de Google Calendar.
-  * [ ] Todo: Llamadas, Calendar, mensajes de Telegram y WhatsApp.
+  * [X] Todo: Llamadas, Calendar, mensajes de Telegram y WhatsApp.
 
 ### Bloque 4: Prioridad de Implementación
 * **¿En qué orden te gustaría que construyamos estas funciones?**
   * (Ejemplo: *1º Calendar, 2º YouTube Music, 3º Telegram IA, 4º MicroSD*)
-  * Tu orden: `________________________________________`
+  * Tu orden: `Calendar, Telegram IA, YT music`
 
 ---
 

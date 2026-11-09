@@ -1,15 +1,14 @@
 /**
  * @file scr_watchface.h
- * @brief Pantalla principal del reloj (Watchface Personalizada) para 410x502 AMOLED.
+ * @brief Pantalla principal del reloj (Watchface Minimalista Ejecutiva) para 410x502 AMOLED.
  *
- * ELEMENTOS DE TU WATCHFACE:
- * 1. Barra superior: Estado del chip de reloj (RTC OK) + Porcentaje y barra de batería.
- * 2. Dial circular central: Anillo animado de 310x310 px que avanza cada segundo (0 a 59 s).
- * 3. Centro del dial:
- *    - Día de la semana y fecha en español (ej. "JUEVES, 05 NOV 2026").
- *    - Hora y minutos de gran tamaño (48 pt).
- *    - Segundos e indicador AM/PM o 24H (tocar el centro del reloj alterna entre 12H y 24H).
- * 4. Dos tarjetas inferiores de resumen (Complicaciones): Voltaje de batería (mV) y Nivel de brillo.
+ * ELEMENTOS DE LA WATCHFACE:
+ * 1. Día de la semana en español (24pt, tono titanio #8E8E93).
+ * 2. Hora principal gigante en formato 12H (108pt tabular anti-aliased, blanco alabastro #F4F4F5).
+ * 3. Indicador AM/PM (28pt, plata cepillada #A1A1AA).
+ * 4. Línea divisoria minimalista (64x2 px, grafito #27272A).
+ * 5. Fecha del mes en español (24pt, plata cepillada #A1A1AA).
+ * 6. Línea interactiva de Google Calendar (18pt, titanio #71717A) con modal emergente de detalles.
  */
 
 #pragma once
@@ -20,17 +19,25 @@
 #include "hal/hal_power.h"
 
 /**
- * @brief Construye todos los elementos visuales de la Watchface dentro del mosaico (tile) principal.
+ * @brief Construye todos los elementos visuales de la Watchface (y el modal de agenda)
+ *        dentro del mosaico (tile) principal.
  */
 void scr_watchface_build(lv_obj_t *parentTile);
 
 /**
- * @brief Actualiza la hora, segundos y fecha mostrados en la Watchface.
+ * @brief Actualiza la hora, fecha y línea de próximo evento en la Watchface.
+ *        Aplica política de consumo cero: solo redibuja cuando cambia el minuto,
+ *        el día o la versión de sincronización de Google Calendar.
  */
 void scr_watchface_update_time(const WatchDateTime &dt);
+
+/**
+ * @brief Fuerza el refresco inmediato de la línea resumen de Google Calendar y del modal
+ *        (útil tras una sincronización manual o actualización de agenda).
+ */
+void scr_watchface_refresh_calendar();
 
 /**
  * @brief Actualiza los indicadores de batería y energía de la Watchface.
  */
 void scr_watchface_update_power(const WatchPowerStatus &power, uint8_t brightness);
-

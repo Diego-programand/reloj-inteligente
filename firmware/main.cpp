@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @brief Firmware Propio Reloj Inteligente ESP32-S3:
- *        Watchface minimalista, RTC PCF85063, Tap-to-Wake y ahorro de pantalla.
+ *        Watchface minimalista, RTC PCF85063, Google Calendar, Tap-to-Wake y ahorro de pantalla.
  */
 
 #include "config/pins_config.h"
@@ -9,6 +9,7 @@
 #include "hal/hal_power.h"
 #include "hal/hal_rtc.h"
 #include "hal/hal_touch.h"
+#include "services/calendar_service.h"
 #include "services/power_manager.h"
 #include "services/time_sync.h"
 #include "ui/ui_manager.h"
@@ -76,11 +77,16 @@ void printSystemReport() {
                   ESP.getPsramSize() / 1024, ESP.getFreePsram() / 1024);
     Serial.printf("  * Reloj Hardware   : PCF85063 RTC activo en 0x51\n");
     Serial.printf("  * Despertar Tactil : Tap-to-Wake ACTIVO + Boton PWR\n");
+    Serial.printf("  * Google Calendar  : %s\n",
+                  calendar_service_is_using_mock()
+                      ? "Modo Demo (Mock Data)"
+                      : "Credenciales Wi-Fi activas");
 
     scanI2CBus();
     updateAndPrintStatus();
     Serial.println("\n>>> COMANDOS POR CONSOLA USB (COM5): <<<");
     Serial.println("  * Envia 'i' -> Ver este reporte completo.");
+    Serial.println("  * Envia 'c' -> Forzar sincronizacion Wi-Fi con Google Calendar y ver traza de red.");
     Serial.println("  * Envia 'T2026-11-06 13:25:00' -> Ajustar fecha y hora exacta en el chip RTC.\n");
 }
 
@@ -101,9 +107,10 @@ void setup() {
     Serial.println("\n[1/5] Inicializando gestor de energia AXP2101 (0x34)...");
     hal_power_init(Wire);
 
-    // 3. Inicializar chip de Reloj en Tiempo Real PCF85063 (0x51)
-    Serial.println("[2/5] Inicializando chip de reloj RTC PCF85063 (0x51)...");
+    // 3. Inicializar chip de Reloj en Tiempo Real PCF85063 (0x51) y Servicio de Agenda
+    Serial.println("[2/5] Inicializando chip de reloj RTC PCF85063 (0x51) y Google Calendar...");
     hal_rtc_init(Wire);
+    calendar_service_init();
 
     // 4. Inicializar panel táctil FT3168 (0x38) y pantalla AMOLED QSPI (410x502)
     Serial.println("[3/5] Inicializando panel tactil FT3168 (0x38)...");
@@ -129,7 +136,10 @@ void loop() {
     // A. Vigilancia de toque para despertar (Tap-to-Wake) y apagado por inactividad (20s)
     power_manager_update();
 
-    // B. Si la pantalla está encendida, ejecutar LVGL y verificar minuto del RTC
+    // B. Gestión de sincronización periódica de Google Calendar (cada 30 min en ráfaga Wi-Fi)
+    calendar_service_loop();
+
+    // C. Si la pantalla está encendida, ejecutar LVGL y verificar minuto del RTC / versión de agenda
     if (hal_display_is_on()) {
         ui_manager_loop();
 
@@ -139,7 +149,7 @@ void loop() {
         }
     }
 
-    // C. Detectar botón físico BOOT (GPIO 0)
+    // D. Detectar botón físico BOOT (GPIO 0)
     bool currentBootState = digitalRead(WATCH_BTN_BOOT_PIN);
     if (currentBootState != lastBootButtonState) {
         delay(20);
@@ -154,27 +164,34 @@ void loop() {
         }
     }
 
-    // D. Detectar botón físico PWR (Encender / Apagar la pantalla con 1 toque)
+    // E. Detectar botón físico PWR (Encender / Apagar la pantalla con 1 toque)
     PwrButtonEvent pwrEvent = hal_power_poll_button();
     if (pwrEvent == PWR_BTN_SHORT_PRESS) {
         power_manager_toggle_screen_manual();
     }
 
-    // E. Procesar comandos recibidos por el cable USB (COM5)
+    // F. Procesar comandos recibidos por el cable USB (COM5)
     if (Serial.available() > 0) {
         String line = Serial.readStringUntil('\n');
         line.trim();
         if (line.equalsIgnoreCase("i")) {
             printSystemReport();
+        } else if (line.equalsIgnoreCase("c")) {
+            Serial.println("\n>>> [COMANDO 'c'] Forzando sincronizacion manual con Google Calendar... <<<");
+            calendar_service_sync_now();
+            ui_manager_update_time(hal_rtc_get_time());
         } else if (line.startsWith("T") || line.startsWith("t")) {
             line.setCharAt(0, 'T');
             if (time_sync_from_serial_string(line)) {
+                if (calendar_service_is_using_mock()) {
+                    calendar_service_sync_now();
+                }
                 ui_manager_update_time(hal_rtc_get_time());
             }
         }
     }
 
-    // F. Actualizar telemetría cada 3 segundos
+    // G. Actualizar telemetría cada 3 segundos
     if (millis() - lastTelemetryMs >= 3000) {
         lastTelemetryMs = millis();
         updateAndPrintStatus();

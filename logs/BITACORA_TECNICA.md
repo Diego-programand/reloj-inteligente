@@ -167,6 +167,46 @@ Este documento funciona como nuestro **diario de laboratorio**. Cada vez que pro
 
 ---
 
+## Entrada #009 — 2026-11-08: Paso 1 (Fase 6) — Integración de Google Calendar, Puente Google Apps Script y Modal Ejecutivo en Watchface
+
+* **Fase del Roadmap:** Fase 6 — Pilar 1 (Google Calendar & Timeline Ejecutivo — Completado)
+* **Archivos Creados / Modificados:**
+  * `tools/google-apps-script/calendar_bridge.gs` (nuevo)
+  * `tools/google-apps-script/README_SETUP.md` (nuevo)
+  * `firmware/config/wifi_secrets.example.h` (nuevo)
+  * `.gitignore` (modificado — exclusión de `firmware/config/wifi_secrets.h`)
+  * `platformio.ini` (modificado — incorporación de `bblanchon/ArduinoJson @ ^7.2.0`)
+  * `firmware/services/calendar_service.h` (nuevo)
+  * `firmware/services/calendar_service.cpp` (nuevo)
+  * `firmware/ui/screens/scr_watchface.h` (modificado)
+  * `firmware/ui/screens/scr_watchface.cpp` (modificado)
+  * `firmware/main.cpp` (modificado)
+  * `docs/06-roadmap-y-fases.md` (modificado)
+* **Qué se hizo:**
+  1. **Puente en la nube (`tools/google-apps-script/calendar_bridge.gs`) y Gestión Segura de Secretos:**
+     * Se creó el script de Google Apps Script `doGet(e)` que actúa como intermediario ligero ("recepcionista privado" en la nube): valida el token `?key=...`, consulta `CalendarApp.getDefaultCalendar()` para las próximas 36 horas y empaqueta hasta 5 eventos en un JSON ultracompacto (< 500 bytes) con timestamps Unix Epoch (`start`, `end`, `server_time`).
+     * Se creó la plantilla `firmware/config/wifi_secrets.example.h` y se protegió `firmware/config/wifi_secrets.h` en `.gitignore` para evitar exponer contraseñas Wi-Fi o URLs de webhook en el repositorio.
+  2. **Servicio Embebido de Calendario (`firmware/services/calendar_service.*`):**
+     * **Ráfagas Wi-Fi de Ultra-Bajo Consumo (*Burst Wi-Fi*):** El módulo Wi-Fi permanece apagado (`WIFI_OFF`) el 99.7% del tiempo; cada 30 minutos (o al enviar `'c'` por `COM5`) se activa con timeout estricto de 5 segundos (`CALENDAR_WIFI_TIMEOUT_MS`), sigue redirecciones HTTP 302 de Google (`HTTPC_STRICT_FOLLOW_REDIRECTS`), descarga el JSON y apaga la antena (`WiFi.disconnect(true, true); WiFi.mode(WIFI_OFF)`) de inmediato.
+     * **Cero Fragmentación en SRAM (Parseo en Octal PSRAM):** Tanto el búfer de descarga HTTP (`4096` bytes) como el árbol `JsonDocument` de `ArduinoJson v7.4.3` utilizan un asignador personalizado (`SpiRamJsonAllocator`) sobre los 8 MB de Octal PSRAM (`MALLOC_CAP_SPIRAM`), respetando el guardrail estricto de no tocar jamás `GPIO 35`.
+     * **Sincronización Horaria Atómica y Modo Demo Defensivo (*Mock Data*):** Si el JSON incluye `server_time` y difiere en > 2 s respecto al chip RTC `PCF85063`, ajusta automáticamente la hora local (`UTC-5`). Si `wifi_secrets.h` aún no existe o no hay red Wi-Fi disponible, genera una agenda ejecutiva de demostración (*Reunión de Estrategia*, *Revisión de Arquitectura*, *Comité Ejecutivo Q4*) relativa a la hora actual del RTC para poder probar la interfaz AMOLED desde el primer segundo.
+  3. **Interfaz Ejecutiva en la Watchface (`firmware/ui/screens/scr_watchface.*`) e Integración en `main.cpp`:**
+     * Se añadió bajo la fecha una línea interactiva minimalista en tono titanio (`#71717A`, `18 pt`, ej. `"16:00 • Reunion de Estr... (en 20m)"`) respetando la política de consumo cero (redibuja solo cuando cambia el minuto del RTC o la versión de sincronización de la agenda).
+     * Al tocar la línea del evento, se despliega un **Modal Emergente Ejecutivo** sobre fondo traslúcido (`410 × 502` px) con tarjeta en grafito oscuro (`#18181B`, borde `#27272A`, `366 × 284` px, coordenadas pares para el controlador `CO5300`) mostrando el estado del evento, título completo en blanco alabastro (`#F4F4F5`), horario inicio-fin y tiempo restante en plata (`#A1A1AA`), ubicación/sala y botón `[CERRAR]`.
+     * Se integró `calendar_service` en `setup()`, `loop()`, comando `'T...'` y el nuevo comando `'c'` por consola USB (`COM5`) para forzar la sincronización manual y ver la traza completa de red.
+* **Resultado / Verificación de Compilación (`pio run`):**
+  * Compilación 100% limpia (`[SUCCESS]`) en PlatformIO (`espressif32 @ 6.9.0`, `ArduinoJson @ 7.4.3`, `lvgl @ 8.4.0`, `XPowersLib @ 0.2.9`):
+    * **RAM:** `15.0%` (`49,108` bytes utilizados de `327,680` bytes de SRAM interna; búferes de LVGL y JSON en los 8 MB de Octal PSRAM).
+    * **Flash:** `38.1%` (`1,273,761` bytes utilizados de `3,342,336` bytes en partición de aplicación).
+  * *(Nota: El puerto `COM5` no se encontraba conectado físicamente al momento de cerrar la compilación; el binario `.pio/build/esp32s3_amoled_206/firmware.bin` quedó generado y listo para flashear con `pio run -t upload` apenas se conecte el reloj).*
+* **Cómo Revertir (Rollback):**
+  * Para volver por código al estado previo a la integración de Google Calendar:
+    `git checkout 3014e64`
+  * Para restaurar el firmware completo de fábrica (32 MB):
+    `powershell -ExecutionPolicy Bypass -File .\scripts\restore_flash_32mb.ps1 -BackupFile ".\backups\factory_backup_32MB.bin"`
+
+---
+
 ## Plantilla para Futuras Entradas (Copiar y Pegar)
 
 ```markdown

@@ -6,6 +6,35 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
+## [0.8.0] - 2026-11-08 — Paso 1 (Fase 6): Integración Google Calendar, Puente Apps Script y Modal Ejecutivo en Watchface
+
+### Añadido (Added)
+* **Puente Serverless de Google Calendar (`tools/google-apps-script/calendar_bridge.gs` y `README_SETUP.md`):**
+  * Script ligero en Google Apps Script (`doGet`) protegido por token secreto (`?key=...`) que consulta las próximas 36 horas del calendario principal y devuelve hasta 5 eventos en un JSON ultracompacto (< 500 bytes) con tiempos en formato Unix Epoch UTC y `server_time` atómico.
+  * Plantilla de credenciales `firmware/config/wifi_secrets.example.h` y regla en `.gitignore` para proteger `firmware/config/wifi_secrets.h`.
+* **Servicio de Agenda y Sincronización (`firmware/services/calendar_service.h` y `firmware/services/calendar_service.cpp`):**
+  * Arquitectura de ráfagas Wi-Fi (*Burst Wi-Fi*) cada 30 minutos con timeout máximo de 5 segundos y apagado inmediato de radio (`WiFi.mode(WIFI_OFF)`), manteniendo el consumo de antena en 0 mA durante el 99.7% del día.
+  * Soporte nativo de redirecciones HTTP 302 (`HTTPC_STRICT_FOLLOW_REDIRECTS`) hacia `script.googleusercontent.com` sobre cliente TLS (`WiFiClientSecure`).
+  * Asignador personalizado `SpiRamJsonAllocator` para `ArduinoJson v7.4.3` y búfer de descarga HTTP alojados directamente en los **8 MB de Octal PSRAM (`MALLOC_CAP_SPIRAM`)**, logrando cero fragmentación en la SRAM interna.
+  * **Modo Demo Automático (*Defensive Mock Data*):** Detección en tiempo de compilación (`__has_include("config/wifi_secrets.h")`) y en tiempo de ejecución que genera una agenda ejecutiva de prueba relativa a la hora del chip RTC `PCF85063` cuando no hay credenciales o cobertura Wi-Fi.
+  * Ajuste automático de precisión del reloj físico `PCF85063` (`UTC-5`) a partir del campo `server_time` del puente de Google.
+* **Línea Interactiva y Modal Ejecutivo en Watchface (`firmware/ui/screens/scr_watchface.h` y `firmware/ui/screens/scr_watchface.cpp`):**
+  * Línea resumen minimalista bajo la fecha en tono titanio (`#71717A`, `18 pt`, ej. `"16:00 • Reunion de Estr... (en 20m)"`) con área táctil extendida.
+  * **Modal Emergente Ejecutivo** a pantalla completa (`410 × 502` px) con tarjeta centrada en grafito oscuro (`#18181B`, borde `#27272A`, `366 × 284` px en coordenadas pares), mostrando estado del evento, título completo con salto de línea automático (`#F4F4F5`), rango horario en 24H/12H + tiempo restante (`#A1A1AA`), ubicación/sala y botón táctil `[CERRAR]`.
+* **Comando `'c'` por Consola Serie USB (`COM5`) en `firmware/main.cpp`:**
+  * Permite forzar en cualquier instante una sincronización manual con Google Calendar y observar en vivo la traza completa de conexión Wi-Fi, redirección HTTP 302 y eventos cargados.
+
+### Cambiado (Changed)
+* **`platformio.ini`:** Añadida dependencia `bblanchon/ArduinoJson @ ^7.2.0` (instalada `v7.4.3`). Uso final verificado en compilación: **RAM `15.0%` (`49,108` / `327,680` bytes)** y **Flash `38.1%` (`1,273,761` / `3,342,336` bytes)**.
+* **`firmware/ui/screens/scr_watchface.cpp`:** La política de consumo cero ahora verifica tanto el cambio de minuto/día del RTC como el contador `calendar_service_get_sync_version()` para refrescar la pantalla únicamente cuando hay cambios reales.
+* **`firmware/main.cpp`:** Inicialización de `calendar_service_init()` en el arranque antes del primer renderizado de la Watchface, ejecución periódica en `loop()` y recálculo automático de la agenda Demo al ajustar la hora por puerto serie (`TYYYY-MM-DD HH:MM:SS`).
+
+### Cómo Revertir (Rollback)
+* **Por código (Git):** `git checkout 3014e64` para volver a la versión `0.7.0` previa a la integración de Google Calendar.
+* **Por hardware (Imagen de fábrica 32 MB):** `powershell -ExecutionPolicy Bypass -File .\scripts\restore_flash_32mb.ps1 -BackupFile ".\backups\factory_backup_32MB.bin"`
+
+---
+
 ## [0.7.0] - 2026-11-06 — Análisis Profundo y Especificación Técnica de Integraciones Inteligentes
 
 ### Añadido (Added)
